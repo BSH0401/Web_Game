@@ -149,6 +149,16 @@ input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line
 .steps{display:flex;justify-content:space-between;margin-top:6px;font-size:11.5px;color:#5d6780}
 .steps span.done{color:#8fa6d6}
 .steps span.on{color:var(--text);font-weight:700}
+.stepper{position:relative;display:flex}
+.stepper .ln{position:absolute;top:11px;left:10%;right:10%;height:3px;background:#0b0e15;border-radius:3px}
+.stepper .ln i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
+.st{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;z-index:1;min-width:0}
+.st .dot{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:#0b0e15;border:2px solid var(--line);color:#5d6780}
+.st.done .dot{background:#22305a;border-color:var(--accent);color:#cfe0ff}
+.st.on .dot{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;box-shadow:0 0 0 4px rgba(79,140,255,.18)}
+.st .nm{font-size:11.5px;color:#5d6780;white-space:nowrap}
+.st.done .nm{color:#8fa6d6} .st.on .nm{color:var(--text);font-weight:700}
+@media (max-width:420px){.st .nm{font-size:10.5px}}
 .hud-r{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .mini{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:5px 10px;font-size:12.5px;white-space:nowrap}
 .mini.bad{border-color:var(--bad);color:#ffc2c8} .mini.warn{border-color:var(--warn);color:#ffe0b0}
@@ -1254,14 +1264,14 @@ function render(){
   $('#status').innerHTML='';
   // HUD
   const sub = S.team ? `${esc(S.team.name)} · ${S.tier}` : S.genre ? `${GENRES[S.genre].game} · 무소속` : '아마추어 게이머';
-  const pct = clamp(((S.age-14)+S.q/4)/15*100);
+  const stepPct = ph/(PHASES.length-1)*100;
   $('#hud').innerHTML = `
     <div class="who"><div class="avatar">${S.genre?GENRES[S.genre].icon:'🎮'}</div>
       <div><b>${esc(S.name)}</b><small>${sub} · ${S.family.emoji} ${S.family.name}</small></div></div>
     <div class="life">
-      <div class="lt"><span><b>${S.age}세</b> · ${S.q+1}분기 (${quarterName()})</span><span>14세 → 29세</span></div>
-      <div class="track"><i style="width:${pct}%"></i></div>
-      <div class="steps">${PHASES.map((p,i)=>`<span class="${i<ph?'done':i===ph?'on':''}">${p}</span>`).join('')}</div>
+      <div class="lt"><span><b>${S.age}세</b> · ${S.q+1}분기 (${quarterName()})</span><span>커리어 단계</span></div>
+      <div class="stepper"><div class="ln"><i style="width:${stepPct}%"></i></div>
+        ${PHASES.map((p,i)=>`<div class="st ${i<ph?'done':i===ph?'on':''}"><span class="dot">${i<ph?'✓':i+1}</span><span class="nm">${p}</span></div>`).join('')}</div>
     </div>
     <div class="hud-r">
       <span class="mini">💰 <b>${won(S.money)}</b></span>
