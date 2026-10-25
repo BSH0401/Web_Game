@@ -1158,7 +1158,7 @@ function showStart(){
   const cell = (k, label) => {
     const gr = grade(t[k]), bonus = k==='mental' && r.family.mental ? r.family.mental : 0;
     return `<div class="gcell"><div class="l">${label}</div>
-      <div class="v">${g(k)}<small class="muted gi">성장 재능<br><b class="grade-${gr}">${GRADE_INFO[gr]}</b> ×${t[k].toFixed(2)}</small></div>
+      <div class="v">${g(k)}<small class="muted gi">성장 재능<br><b class="grade-${gr}">${GRADE_INFO[gr]}</b></small></div>
       <div class="sv">시작 수치 <b>${d[k]}</b>${bonus?` <span style="color:var(--good)">+${bonus} 헝그리 정신</span>`:''}
         <div class="bar"><i style="width:${(d[k]+bonus)/START_MAX*100}%;--c:${STAT_COLORS[k]}"></i></div></div></div>`;
   };
