@@ -134,32 +134,113 @@ input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line
 .about{max-width:760px;margin:40px auto 10px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
 .about h2{font-size:15px;color:var(--text);margin:0 0 6px}
 .about p{margin:6px 0}
+/* ===== UI 개편 ===== */
+.hdr-btns{display:flex;gap:6px}
+.hud{display:grid;grid-template-columns:minmax(180px,auto) 1fr auto;gap:18px;align-items:center;margin-bottom:14px;padding:12px 16px}
+.who{display:flex;gap:10px;align-items:center;min-width:0}
+.who b{display:block;font-size:16px;line-height:1.3}
+.who small{color:var(--muted);font-size:12.5px}
+.avatar{width:46px;height:46px;flex:none;border-radius:14px;display:grid;place-items:center;font-size:24px;background:linear-gradient(135deg,#1f2a44,#2a1f44);border:1px solid var(--line)}
+.life{min-width:0}
+.life .lt{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);margin-bottom:5px}
+.life .lt b{color:var(--text)}
+.track{position:relative;height:8px;background:#0b0e15;border-radius:9px;overflow:hidden}
+.track i{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
+.steps{display:flex;justify-content:space-between;margin-top:6px;font-size:11.5px;color:#5d6780}
+.steps span.done{color:#8fa6d6}
+.steps span.on{color:var(--text);font-weight:700}
+.hud-r{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.mini{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:5px 10px;font-size:12.5px;white-space:nowrap}
+.mini.bad{border-color:var(--bad);color:#ffc2c8} .mini.warn{border-color:var(--warn);color:#ffe0b0}
+.powerbox{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-bottom:12px}
+.powerbox .muted{font-size:12.5px;text-align:right}
+.bar i{background:var(--c,linear-gradient(90deg,var(--accent),var(--accent2)))}
+.dl{font-size:11px;margin-left:5px;font-weight:600}
+.dl.up{color:var(--good)} .dl.down{color:var(--bad)}
+.fatlabel{font-size:11px;color:var(--muted);margin-left:4px;font-weight:500}
+details.others{margin-top:8px}
+details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;padding:4px 0}
+.genrebox .t span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.goal{background:linear-gradient(135deg,#17213a,#1d1a33);border:1px solid #2c3a5e;border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.goal .gt{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
+.goal .gs{font-size:12.5px;color:var(--muted);margin-top:2px}
+.goal .bar{height:6px;margin-top:7px}
+.goal .gw{color:var(--warn);font-size:12.5px;margin-top:6px}
+.agroup{margin-bottom:12px}
+.agroup h4{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.4px}
+.act .top{display:flex;align-items:center;gap:7px}
+.act .top b{margin:0}
+.act small{margin-top:2px}
+.act .tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:7px}
+.tag{font-size:11px;padding:0 6px;border-radius:5px;background:#0b0e15;border:1px solid var(--line);color:var(--good);white-space:nowrap}
+.tag.cost{color:var(--warn)}
+.act:active:not(:disabled){transform:scale(.97)}
+.act.sp{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px}
+.act.sp .i{font-size:26px}
+.act.sp .grow{flex:1}
+.pips{color:var(--gold);letter-spacing:3px;font-size:13px;white-space:nowrap}
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,16px);opacity:0;transition:opacity .25s,transform .25s;z-index:60;background:#1b2234;border:1px solid var(--accent);border-radius:12px;padding:10px 14px;width:max-content;max-width:min(92vw,460px);font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.45);pointer-events:none}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.entry.new{animation:slidein .35s ease-out}
+@keyframes slidein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.modal[data-kind=match]{border-color:var(--accent)}
+.modal[data-kind=event]{border-color:#4a3a73}
+.modal[data-kind=win]{border-color:var(--gold);box-shadow:0 0 40px rgba(255,209,102,.16)}
+.modal[data-kind=lose]{border-color:#5a2a33}
+.hero{display:flex;gap:14px;align-items:center;margin-bottom:4px}
+.hero-ic{width:58px;height:58px;flex:none;border-radius:18px;display:grid;place-items:center;font-size:32px;background:linear-gradient(135deg,#24345a,#3a2a5a);border:1px solid var(--line)}
+.gcell.fam{display:flex;align-items:center;gap:12px}
+.gcell.fam .fe{font-size:30px}
+.gcell.fam-0{border-color:#8a6d2a;background:linear-gradient(135deg,#2a2412,var(--panel2))}
+.gcell.fam-2{border-color:#5a4636}
+.gcell .v small{font-size:12.5px;font-weight:500}
+.gb{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#0b0e15;border:1px solid var(--line);font-weight:800;margin-right:6px}
+.gacha.flip .gcell{animation:flip .45s ease-out both}
+.gacha.flip .gcell:nth-child(2){animation-delay:.05s} .gacha.flip .gcell:nth-child(3){animation-delay:.1s}
+.gacha.flip .gcell:nth-child(4){animation-delay:.15s} .gacha.flip .gcell:nth-child(5){animation-delay:.2s}
+@keyframes flip{from{transform:rotateX(80deg);opacity:0}to{transform:none;opacity:1}}
+.title-badge{animation:badge .6s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes badge{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+.scoreline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:14px}
+.scoreline .num{font-size:28px;font-weight:800;background:linear-gradient(90deg,var(--gold),#ff9f6b);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media (max-width:820px){
+  .hud{grid-template-columns:1fr;gap:10px}
+  .hud-r{justify-content:flex-start}
+  .maincol{order:-1}
+  .genres{display:block}
+  .genres .genrebox{margin-top:6px}
+  .steps{font-size:10.5px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <h1 class="logo" style="margin:0">🎮 <span>프로게이머 키우기</span></h1>
-    <div class="status" id="status"></div>
+    <div class="hdr-btns"><div class="status" id="status"></div><button class="sbtn" onclick="showRanking()">🏆 랭킹</button></div>
   </header>
 
   <!-- 시작 화면 -->
   <section id="start" class="center card"></section>
 
   <!-- 게임 화면 -->
-  <section id="game" class="grid hide">
-    <aside class="card" id="stats"></aside>
-    <main>
-      <div class="card">
-        <div class="next" id="next"></div>
-        <div class="actions" id="actions"></div>
-        <div class="sub" id="subactions"></div>
-      </div>
-      <div class="card" style="margin-top:14px">
-        <h3>📜 인생 기록</h3>
-        <div class="log" id="log"></div>
-      </div>
-    </main>
+  <section id="game" class="hide">
+    <div class="hud card" id="hud"></div>
+    <div class="grid">
+      <aside class="card" id="stats"></aside>
+      <main class="maincol">
+        <div class="card">
+          <div id="goal"></div>
+          <div id="actions"></div>
+          <div class="sub" id="subactions"></div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <h3>📜 인생 기록</h3>
+          <div class="log" id="log"></div>
+        </div>
+      </main>
+    </div>
   </section>
 
   <!-- 엔딩 -->
@@ -173,6 +254,7 @@ input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line
   </footer>
 </div>
 
+<div id="toast"></div>
 <div class="ov" id="modal"><div class="modal">
   <h2 id="mTitle"></h2><div id="mBody"></div><div class="choices" id="mChoices"></div>
 </div></div>
@@ -368,11 +450,12 @@ function diffHtml(a,b){
   return out.length ? `<div class="chips">${out.join('')}</div>` : '';
 }
 function hist(text,type='key'){ S.history.push({age:S.age,q:S.q,text,type}); }
-function log(text, chips='', type=''){ S.log.unshift({when:`${S.age}세 ${S.q+1}분기`, text, chips, type}); if(S.log.length>80) S.log.pop(); }
+function log(text, chips='', type=''){ S.logSeq=(S.logSeq||0)+1; S.log.unshift({id:S.logSeq, when:`${S.age}세 ${S.q+1}분기`, text, chips, type}); if(S.log.length>80) S.log.pop(); }
 
 /* ================= 모달 ================= */
-function modal({title, html='', choices=[{label:'확인'}]}){
+function modal({title, html='', choices=[{label:'확인'}], kind=''}){
   return new Promise(res=>{
+    $('#modal .modal').dataset.kind = kind;
     $('#mTitle').textContent = title;
     $('#mBody').innerHTML = html;
     const box = $('#mChoices'); box.innerHTML='';
@@ -386,7 +469,12 @@ function modal({title, html='', choices=[{label:'확인'}]}){
     $('#modal').classList.add('show');
   });
 }
-const info = (title, html) => modal({title, html});
+const info = (title, html, kind='') => modal({title, html, kind});
+let toastTimer=null;
+function showToast(html){
+  const t=$('#toast'); t.innerHTML=html; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), 2600);
+}
 
 /* ================= 행동 ================= */
 function soloq(g){
@@ -406,35 +494,39 @@ function soloq(g){
 function getActions(){
   const inj = S.injury>0, A=[];
   if(!S.genre){
-    for(const g of GKEYS) A.push({icon:GENRES[g].icon, label:`랭크: ${GENRES[g].name}`, desc:`${GENRES[g].game} · 숙련도·랭크↑`, dis:inj, run:()=>soloq(g)});
+    for(const g of GKEYS) A.push({group:'train', icon:GENRES[g].icon, label:`${GENRES[g].name} 랭크`,
+      sub:`${GENRES[g].game} · ${S.played[g]>=3?`<span class="stars">${stars(g)}</span>`:'재능 ???'}`,
+      tags:['숙련도↑','랭크↑','피로↑'], dis:inj, run:()=>soloq(g)});
   } else {
     const g=S.genre;
-    A.push({icon:GENRES[g].icon, label:'솔로랭크', desc:'숙련도·피지컬·랭크↑ 피로↑', dis:inj, run:()=>soloq(g)});
+    A.push({group:'train', icon:GENRES[g].icon, label:'솔로랭크', sub:`${GENRES[g].game} · ${tierOf(S.mmr[g])}`,
+      tags:['숙련도↑','피지컬↑','랭크↑','피로↑'], dis:inj, run:()=>soloq(g)});
   }
-  if(S.team) A.push({icon:'👥', label:'팀 연습', desc:'숙련도·운영·팀 호흡↑', dis:inj, run:()=>{
+  if(S.team) A.push({group:'train', icon:'👥', label:'팀 연습', sub:'스크림으로 호흡 맞추기', tags:['숙련도↑','운영↑','팀 전력↑','피로↑'], dis:inj, run:()=>{
     growSkill(S.genre,.09); grow('macro',.04); fx({teamBonus:.6}); tire(15);
     return '팀원들과 스크림을 돌렸다. 호흡이 점점 맞아간다.'; }});
-  A.push({icon:'🧠', label:'전략 분석', desc:'운영↑ (VOD·메타 공부)', run:()=>{
+  A.push({group:'train', icon:'🧠', label:'전략 분석', sub:'VOD·메타 공부', tags:['운영↑','피로 소폭↑'], run:()=>{
     grow('macro',.07); if(S.genre) growSkill(S.genre,.03); tire(8);
     return '프로 경기 VOD를 돌려보며 운영을 공부했다.'; }});
-  A.push({icon:'🏃', label:'운동', desc:'체력↑ 피지컬 소폭↑', run:()=>{
+  A.push({group:'train', icon:'🏃', label:'운동', sub: inj?'재활 운동':'헬스·유산소', tags:['체력↑','피지컬 소폭↑'], run:()=>{
     grow('health',.1); grow('phys',.025); tire(5); S.fatigue=clamp(S.fatigue-4);
     return inj ? '재활 운동으로 손목을 관리했다.' : '헬스장에서 땀을 흘렸다. 몸이 가볍다.'; }});
-  A.push({icon:'📺', label:'방송', desc:'인기·돈↑', run:()=>{
+  A.push({group:'care', icon:'🛌', label:'휴식', sub:'푹 쉬며 재충전', tags:['피로↓↓','멘탈↑'], run:()=>{
+    S.fatigue=clamp(S.fatigue-40); grow('mental',.06);
+    return '푹 쉬었다. 머리가 맑아졌다.'; }});
+  A.push({group:'care', icon:'📺', label:'방송', sub:'개인 방송 켜기', tags:['인기↑','돈↑'], run:()=>{
     const meta = S.genre ? S.popMeta()[S.genre] : 1;
     const sm = S.genre ? GENRES[S.genre].streamMul : 1;
     const gain = (2 + (S.team?1.5:0)) * meta * sm * (1 - S.pop/130);
     const cash = Math.round(S.pop*4*meta*sm + 20);
     S.pop = clamp(S.pop+gain); S.money += cash; S.earned += cash; tire(6);
     return `개인 방송을 켰다. 시청자 ${Math.round(30+S.pop*S.pop*3)}명!`; }});
-  A.push({icon:'🛌', label:'휴식', desc:'피로↓↓ 멘탈↑', run:()=>{
-    S.fatigue=clamp(S.fatigue-40); grow('mental',.06);
-    return '푹 쉬었다. 머리가 맑아졌다.'; }});
-  if(S.age<19) A.push({icon:'📚', label:'학교 공부', desc:'학업↑ 부모님 신뢰↑', run:()=>{
+  if(S.age<19) A.push({group:'care', icon:'📚', label:'학교 공부', sub:'부모님 신뢰 쌓기', tags:['학업↑'], run:()=>{
     grow('edu',.1); tire(6); S.flags.trust=(S.flags.trust||0)+1;
     return '학교 수업에 집중했다. 부모님이 흐뭇해하신다.'; }});
   return A;
 }
+function turnDelta(a,b){ const d={}; for(const k in a) d[k]=b[k]-a[k]; return d; }
 const SPECIAL_MAX = 5;
 const SPECIALS = [
   {icon:'🌏', label:'해외 부트캠프', desc:'숙련도 +12 · 운영 +5 · 피로 +25 · 300만원', ok:()=>S.money>=300&&S.injury<=0,
@@ -457,11 +549,13 @@ async function doSpecial(){
     choices:[...SPECIALS.map(sp=>({label:`${sp.icon} ${sp.label}`, desc:sp.desc, disabled:!sp.ok()})), {label:'취소'}]});
   if(i>=SPECIALS.length){ busy=false; render(); return; }
   const sp=SPECIALS[i]; S.special--;
-  const b=snap(); const msg=sp.run();
+  const b=snap(); const msg=sp.run(); const chips=diffHtml(b,snap());
   hist(`특수훈련: ${sp.label}`,'good');
-  log(`⭐ ${msg}`, diffHtml(b,snap()), 'key');
+  log(`⭐ ${msg}`, chips, 'key');
+  showToast(`⭐ ${msg}${chips}`);
   render();
   await endOfTurn();
+  S.lastDelta = turnDelta(b, snap());
   busy=false;
   if(!S.ended){ render(); save(); }
 }
@@ -469,10 +563,12 @@ async function doAction(a){
   if(busy || S.ended) return;
   busy=true; render();
   const b=snap();
-  const msg=a.run();
-  log(`${a.icon} ${msg}`, diffHtml(b,snap()));
+  const msg=a.run(); const chips=diffHtml(b,snap());
+  log(`${a.icon} ${msg}`, chips);
+  showToast(`${a.icon} ${msg}${chips}`);
   render();
   await endOfTurn();
+  S.lastDelta = turnDelta(b, snap());
   busy=false;
   if(!S.ended){ render(); save(); }
 }
@@ -496,7 +592,7 @@ async function endOfTurn(){
   if(S.tier==='1군') await seasonStep();
   else if(S.tier==='2군' && pw() >= teamRating()-8){
     S.tier='1군'; S.wasPro=true; S.seed=99; hist(`${S.team.name} 1군 승격!`,'key');
-    await info('⬆️ 1군 승격!', `<p>감독이 불렀다. "다음 시즌부터 1군 주전이다."</p><p><b>${esc(S.team.name)}</b> 1군 데뷔!</p>`);
+    await info('⬆️ 1군 승격!', `<p>감독이 불렀다. "다음 시즌부터 1군 주전이다."</p><p><b>${esc(S.team.name)}</b> 1군 데뷔!</p>`, 'win');
   }
   // 수입
   if(S.tier){
@@ -571,7 +667,7 @@ async function tryout(){
   const i = await modal({title:'📞 프로팀 스카우트!', html:`<p>${tierOf(S.mmr[g])} 랭커가 된 당신에게 프로팀들의 연락이 왔다!</p><p class="muted">현재 전투력 ${Math.round(p)}</p>`, choices});
   if(i===list.length){ S.tryCool=S.turn+2; return; }
   joinTeam(list[i]);
-  await info('✍️ 계약 완료', `<p><b>${esc(list[i].name)}</b> ${S.tier} 계약서에 사인했다!</p><p class="muted">${S.tier==='1군'?'곧바로 시즌에 출전한다.':'전투력을 올려 1군 승격을 노리자.'}</p>`);
+  await info('✍️ 계약 완료', `<p><b>${esc(list[i].name)}</b> ${S.tier} 계약서에 사인했다!</p><p class="muted">${S.tier==='1군'?'곧바로 시즌에 출전한다.':'전투력을 올려 1군 승격을 노리자.'}</p>`, 'win');
 }
 function joinTeam(t){
   S.team={name:t.name, rating:t.rating}; S.teamBonus=0; S.seed=99; S.abroad=!!t.abroad;
@@ -609,7 +705,7 @@ async function featured(opp, stage, bo, weight=1){
       <div class="vs"><span>${esc(S.team.name)}</span><span class="mid">VS</span><span>${esc(opp.name)}</span></div>
       <div class="prob"><i style="width:${pct}%"></i></div>
       <p class="muted">예상 승률 <b style="color:var(--text)">${pct}%</b> · ${bo}판 ${need}선승제 · 상대 전력 ${opp.rating}</p>
-      ${g==='br'?'<p class="muted">라운드마다 상대 팀보다 높은 순위를 차지하면 승리</p>':''}<p>감독: "오늘 작전은 네가 정해라."</p>`, choices:G.tactics.map(t=>({label:t.label,desc:t.desc}))});
+      ${g==='br'?'<p class="muted">라운드마다 상대 팀보다 높은 순위를 차지하면 승리</p>':''}<p>감독: "오늘 작전은 네가 정해라."</p>`, choices:G.tactics.map(t=>({label:t.label,desc:t.desc})), kind:'match'});
     mod=G.tactics[i].mod(); tName=G.tactics[i].label;
   }
   const p=clamp(.5 + (base+mod-.5)*G.variance, .05, .95);
@@ -624,7 +720,7 @@ async function featured(opp, stage, bo, weight=1){
   await modal({title: win?'🏆 승리!':'💀 패배', html:`
     <p class="muted" style="text-align:center">${esc(stage)} · 작전: ${tName}</p>
     <div class="score">${w} : ${l}</div><ul class="pbp">${lines.join('')}</ul>
-    ${pog?'<p class="pog">🌟 POG(Player of the Game) 선정!</p>':''}`, choices:[{label:'계속'}]});
+    ${pog?'<p class="pog">🌟 POG(Player of the Game) 선정!</p>':''}`, choices:[{label:'계속'}], kind: win?'win':'lose'});
   return win;
 }
 async function regularSeason(name){
@@ -649,7 +745,7 @@ async function playoffs(name){
   S.trophies.league.push(label); if(!S.champGenres.includes(S.genre)) S.champGenres.push(S.genre);
   S.yearChamp=true; S.money+=1000; S.earned+=1000; S.pop=clamp(S.pop+12);
   hist(`${name} 우승! 🏆`,'key'); log(`🏆 ${name} 우승!`,'','key');
-  await info('🏆 우승!!', `<p>꽃가루가 쏟아진다. <b>${esc(S.team.name)}</b>, ${name} 챔피언!</p><p class="muted">우승 상금 1,000만원 · 월드 챔피언십 진출권 획득</p>`);
+  await info('🏆 우승!!', `<p>꽃가루가 쏟아진다. <b>${esc(S.team.name)}</b>, ${name} 챔피언!</p><p class="muted">우승 상금 1,000만원 · 월드 챔피언십 진출권 획득</p>`, 'win');
 }
 async function worlds(){
   await info('🌍 월드 챔피언십', '<p>전 세계 최강팀들이 모였다. 세계 정상을 향한 도전이 시작된다!</p>');
@@ -665,7 +761,7 @@ async function worlds(){
   if(!S.champGenres.includes(S.genre)) S.champGenres.push(S.genre);
   S.money+=5000; S.earned+=5000; S.pop=clamp(S.pop+25); S.mental=clamp(S.mental+10);
   hist('🌍 월드 챔피언 등극!!','key'); log('🌍 월드 챔피언!!','','key');
-  await info('👑 세계 정상!', `<p>당신은 이제 <b>월드 챔피언</b>이다!</p><p class="muted">상금 5,000만원 · 인기 폭발</p>`);
+  await info('👑 세계 정상!', `<p>당신은 이제 <b>월드 챔피언</b>이다!</p><p class="muted">상금 5,000만원 · 인기 폭발</p>`, 'win');
 }
 async function seasonStep(){
   if(S.q===0) await regularSeason('스프링');
@@ -677,7 +773,7 @@ async function seasonStep(){
     // 방출 체크
     if(pw() < teamRating()-18){
       hist(`${S.team.name} 방출`,'bad');
-      await info('📦 방출 통보', `<p>"미안하지만 다음 시즌 계약은 없다." <b>${esc(S.team.name)}</b>에서 방출되었다.</p><p class="muted">랭크를 올려 다른 팀의 연락을 기다리자.</p>`);
+      await info('📦 방출 통보', `<p>"미안하지만 다음 시즌 계약은 없다." <b>${esc(S.team.name)}</b>에서 방출되었다.</p><p class="muted">랭크를 올려 다른 팀의 연락을 기다리자.</p>`, 'lose');
       S.team=null; S.tier=null; S.salaryMul=1; S.abroad=false; S.tryCool=S.turn+1;
     }
   }
@@ -793,10 +889,10 @@ async function randomEvent(){
   const text = typeof e.text==='function' ? e.text() : e.text;
   const ch = e.choices.map(c=>({label:c.label, desc:c.desc, disabled: typeof c.disabled==='function' ? c.disabled() : false}));
   if(ch.every(c=>c.disabled)) ch[ch.length-1].disabled=false;
-  const i = await modal({title:e.title, html:`<p>${text}</p>`, choices:ch});
+  const i = await modal({title:e.title, html:`<p>${text}</p>`, choices:ch, kind:'event'});
   const b=snap(); const r=e.choices[i].run(); const d=diffHtml(b,snap());
   log(`${e.title} — ${r}`, d);
-  await modal({title:e.title, html:`<p>${r}</p>${d}`, choices:[{label:'확인'}]});
+  await modal({title:e.title, html:`<p>${r}</p>${d}`, choices:[{label:'확인'}], kind:'event'});
 }
 
 /* ================= 장르 전향 / 은퇴 ================= */
@@ -874,7 +970,9 @@ function showEnding(){
   saveLocalRecord(S.rankRec);
   const trophies = [
     ...S.trophies.worlds.map(t=>`<div class="trophy">👑 월드 챔피언 — ${t}</div>`),
-    ...S.trophies.league.map(t=>`<div class="trophy">🏆 ${t}</div>`),
+    S.trophies.league.length>3
+      ? `<details class="others"><summary class="trophy" style="color:var(--text)">🏆 리그 우승 ${S.trophies.league.length}회 (펼쳐 보기)</summary>${S.trophies.league.map(t=>`<div class="trophy">🏆 ${t}</div>`).join('')}</details>`
+      : S.trophies.league.map(t=>`<div class="trophy">🏆 ${t}</div>`).join(''),
     S.flags.gold?'<div class="trophy">🥇 아시안게임 금메달</div>':''
   ].join('') || '<div class="muted">우승 기록 없음</div>';
   const tl = S.history.slice(-14).map(h=>`<div class="${h.type}">${h.age}세 · ${esc(h.text)}</div>`).join('') || '<div>조용한 인생이었다.</div>';
@@ -891,7 +989,8 @@ function showEnding(){
     </div>
     <h3 style="margin:10px 0 4px">🏆 우승 기록</h3>${trophies}
     <h3 style="margin:14px 0 0">📅 인생 연표</h3><div class="tl">${tl}</div>
-    <p style="margin-top:14px"><b>인생 점수: ${score.toLocaleString()}점</b> ${isBest?'<span class="pill hot">🎉 최고 기록!</span>':`<span class="muted">(최고 ${best.score.toLocaleString()}점 · ${esc(best.title)})</span>`}</p>
+    <div class="scoreline"><span class="muted">인생 점수</span><span class="num" id="scoreNum">0</span><span class="muted">점</span>
+      ${isBest?'<span class="pill hot">🎉 최고 기록!</span>':`<span class="muted">(최고 ${best.score.toLocaleString()}점 · ${esc(best.title)})</span>`}</div>
     <div class="btnrow"><button class="primary" onclick="restart()">🔁 다시 태어나기</button>
       ${rankOn()?'<button class="ghost" id="rankBtn" onclick="submitRank()">🌐 랭킹 등록</button>':''}
       <button class="ghost" onclick="showRanking()">🏆 랭킹 보기</button>
@@ -901,6 +1000,12 @@ function showEnding(){
   storeSet('pg_save', null);
   $('#game').classList.add('hide'); $('#ending').classList.remove('hide'); $('#status').innerHTML='';
   window.scrollTo(0,0);
+  const el=$('#scoreNum'); el.textContent=score.toLocaleString();
+  if(!document.hidden){ // 화면이 보일 때만 숫자가 올라가는 연출
+    const t0=performance.now();
+    const step=now=>{ const k=Math.min(1,(now-t0)/1200); el.textContent=Math.round(score*(1-Math.pow(1-k,3))).toLocaleString(); if(k<1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
 }
 function copyResult(){
   const done=()=>{ $('#copyBtn').textContent='✅ 복사됨!'; };
@@ -975,37 +1080,38 @@ async function submitRank(){
 /* ================= 시작 화면 ================= */
 function showStart(){
   const r=roll, t=r.talent;
-  const g = k => `<span class="grade-${grade(t[k])}">${grade(t[k])}</span>`;
+  const g = k => `<span class="gb grade-${grade(t[k])}">${grade(t[k])}</span>`;
   const saved = storeGet('pg_save');
   $('#start').classList.remove('hide');
+  const fi = FAMILIES.indexOf(r.family);
   $('#start').innerHTML = `
-    <div class="big">🍼 출생 가챠</div>
-    <p class="muted">게임을 사랑하는 14살로 태어났다. 어떤 패를 들고 시작할까?</p>
-    <div class="gacha">
-      <div class="gcell" style="grid-column:1/-1"><div class="l">가정 환경</div><div class="v">${r.family.emoji} ${r.family.name} <small class="muted" style="font-size:12px;font-weight:400">· ${r.family.desc} · 시작 자금 ${won(r.family.money)}</small></div></div>
-      <div class="gcell"><div class="l">피지컬 재능</div><div class="v">${g('phys')} <small class="muted">(${r.base.phys})</small></div></div>
-      <div class="gcell"><div class="l">운영 재능</div><div class="v">${g('macro')} <small class="muted">(${r.base.macro})</small></div></div>
-      <div class="gcell"><div class="l">멘탈 재능</div><div class="v">${g('mental')} <small class="muted">(${clamp(r.base.mental)})</small></div></div>
-      <div class="gcell"><div class="l">장르 적성</div><div class="v">??? <small class="muted" style="font-size:12px">플레이하며 발견</small></div></div>
+    <div class="hero"><div class="hero-ic">🍼</div><div><div class="big">출생 가챠</div>
+      <p class="muted" style="margin:0">게임을 사랑하는 14살로 태어났다. 어떤 패를 들고 시작할까?</p></div></div>
+    <div class="gacha" id="gacha">
+      <div class="gcell fam fam-${fi}" style="grid-column:1/-1"><span class="fe">${r.family.emoji}</span>
+        <div><div class="l">가정 환경</div><div class="v">${r.family.name}</div><div class="muted" style="font-size:12.5px">${r.family.desc} · 시작 자금 ${won(r.family.money)}</div></div></div>
+      <div class="gcell"><div class="l">피지컬 재능</div><div class="v">${g('phys')}<small class="muted">시작 ${r.base.phys}</small></div></div>
+      <div class="gcell"><div class="l">운영 재능</div><div class="v">${g('macro')}<small class="muted">시작 ${r.base.macro}</small></div></div>
+      <div class="gcell"><div class="l">멘탈 재능</div><div class="v">${g('mental')}<small class="muted">시작 ${clamp(r.base.mental)}</small></div></div>
+      <div class="gcell"><div class="l">장르 적성</div><div class="v"><span class="gb">?</span><small class="muted">플레이하며 발견</small></div></div>
     </div>
     <label class="muted" style="font-size:13px">닉네임</label>
     <input type="text" id="nick" maxlength="12" placeholder="예: 페이크" value="">
     <div class="btnrow">
       <button class="primary" onclick="startGame()">🎮 이 인생으로 시작</button>
       <button class="ghost" onclick="reroll()" ${rerolls<=0?'disabled style="opacity:.4"':''}>🎲 다시 뽑기 (${rerolls})</button>
-      <button class="ghost" onclick="showRanking()">🏆 랭킹</button>
       ${saved&&!saved.ended?`<button class="ghost" onclick="loadGame()">▶ 이어하기 (${esc(saved.name)}, ${saved.age}세)</button>`:''}
     </div>
     <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA·FPS·RTS·격투·배틀로얄 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!<br>⭐ 특수훈련은 인생에 5번만 쓸 수 있어요. 결정적인 순간에 쓰세요!</p>`;
 }
-function reroll(){ if(rerolls<=0) return; rerolls--; roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; }
+function reroll(){ if(rerolls<=0) return; rerolls--; roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; $('#gacha').classList.add('flip'); }
 function startGame(){
   const name = ($('#nick').value.trim() || pick(['새싹','손가락천재','키보드워리어','에임봇','갓겜러'])).slice(0,12);
   S = newLife(roll, name); attachMeta();
   hist(`${roll.family.name}에서 태어난 게이머 ${name}, 꿈을 꾸기 시작하다`,'key');
   log(`🍼 ${roll.family.emoji} ${roll.family.name} 출신 ${esc(name)}의 게이머 인생이 시작됐다!`,'','key');
   $('#start').classList.add('hide'); $('#game').classList.remove('hide');
-  render(); save();
+  lastLogShown=null; render(); save(); window.scrollTo(0,0);
 }
 function attachMeta(){
   S.meta = {...META0, ...(S.meta||{})};
@@ -1017,63 +1123,108 @@ function attachMeta(){
   S.popMeta=()=>S.meta;
 }
 function save(){ if(S && !S.ended){ const c={...S}; delete c.popMeta; storeSet('pg_save', c); } }
-function loadGame(){ const s=storeGet('pg_save'); if(!s) return; S=s; attachMeta(); $('#start').classList.add('hide'); $('#game').classList.remove('hide'); render(); }
+function loadGame(){ const s=storeGet('pg_save'); if(!s) return; S=s; attachMeta(); $('#start').classList.add('hide'); $('#game').classList.remove('hide'); lastLogShown=null; render(); }
 
 /* ================= 렌더 ================= */
-function bar(label, v, cls=''){ return `<div class="stat"><div class="row"><span>${label}</span><b>${Math.round(v)}</b></div><div class="bar ${cls}"><i style="width:${clamp(v)}%"></i></div></div>`; }
+const STAT_COLORS = {phys:'#ff7a59', macro:'#4f8cff', mental:'#a46bff', health:'#3ecf8e', pop:'#ffd166', edu:'#5bc0eb'};
+const PHASES = ['아마추어','프로 지망','연습생','1군','은퇴'];
+function bar(label, v, key){
+  const d = S.lastDelta ? Math.round(S.lastDelta[key]||0) : 0;
+  const goodUp = key!=='fatigue';
+  const dl = d ? `<span class="dl ${(d>0)===goodUp?'up':'down'}">${d>0?'▲':'▼'}${Math.abs(d)}</span>` : '';
+  const extra = key==='fatigue' ? `<span class="fatlabel">${v<40?'좋음':v<70?'피곤':'과로!'}</span>` : '';
+  const bg = key==='fatigue' ? '' : `;--c:${STAT_COLORS[key]}`;
+  return `<div class="stat"><div class="row"><span>${label}${extra}</span><b>${Math.round(v)}${dl}</b></div><div class="bar ${key==='fatigue'?'fat':''}"><i style="width:${clamp(v)}%${bg}"></i></div></div>`;
+}
 function quarterName(){
   if(S.tier==='1군') return ['스프링 정규시즌','스프링 플레이오프','서머 정규시즌','서머 플레이오프'][S.q];
   return ['봄','여름','가을','겨울'][S.q];
 }
+function phaseIdx(){ return !S.genre ? 0 : !S.team ? 1 : S.tier==='2군' ? 2 : 3; }
+function goalInfo(){
+  if(!S.genre){
+    const found=GKEYS.filter(g=>S.played[g]>=3).length;
+    return {icon:'🔍', t:'여러 장르를 해보며 재능 찾기', s:`재능 발견 ${found}/5 · 16살에 주력 장르를 정해요`,
+      cur:GKEYS.reduce((a,g)=>a+Math.min(S.played[g],3),0), max:15};
+  }
+  if(!S.team) return {icon:'📞', t:`프로 스카우트까지: ${tierOf(TRYOUT_MMR)} 달성`,
+    s:`${GENRES[S.genre].game} · 현재 ${tierOf(S.mmr[S.genre])} ${S.mmr[S.genre]} / ${TRYOUT_MMR}점`, cur:S.mmr[S.genre], max:TRYOUT_MMR};
+  if(S.tier==='2군'){ const t=Math.round(teamRating()-8);
+    return {icon:'⬆️', t:`1군 승격: 전투력 ${t} 달성`, s:`${S.team.name} 연습생 · 현재 전투력 ${Math.round(pw())}`, cur:pw(), max:t}; }
+  const po = S.seed===99 ? '다음 시즌 준비' : S.seed<=4 ? `플레이오프 (시드 ${S.seed}위)` : '플레이오프 탈락 · 정비 기간';
+  const t = ['스프링 정규시즌 (7경기)', `스프링 ${po}`, '서머 정규시즌 (7경기)', `서머 ${po}`][S.q];
+  return {icon:'🏟️', t:`이번 분기: ${t}`, s:`팀 전력 ${Math.round(teamRating())} · 내 전투력 ${Math.round(pw())} · 월드 ${S.trophies.worlds.length} · 리그 ${S.trophies.league.length}`};
+}
+function genreBox(k){
+  return `<div class="genrebox ${S.genre===k?'main':''}">
+    <div class="t"><span>${GENRES[k].icon} ${GENRES[k].game}</span><span class="stars">${S.played[k]>=3?stars(k):'???'}</span></div>
+    <div class="muted">${tierOf(S.mmr[k])} ${S.mmr[k]}점 · 숙련도 ${Math.round(S.skill[k])} · 인기 ${S.meta[k].toFixed(2)}x</div></div>`;
+}
+let lastLogShown = null;
 function render(){
   if(!S) return;
-  const g=cg();
-  // 상단 상태
-  const st=[`<span class="pill">${S.age}세 · ${S.q+1}분기 (${quarterName()})</span>`];
-  st.push(S.team ? `<span class="pill hot">${esc(S.team.name)} ${S.tier}</span>` : `<span class="pill">${S.genre?'무소속':'아마추어'}</span>`);
-  if(S.injury>0) st.push(`<span class="pill bad">🩹 부상 ${S.injury}</span>`);
-  if(S.slump>0) st.push(`<span class="pill warn">🌧️ 슬럼프 ${S.slump}</span>`);
-  if(S.fatigue>70) st.push(`<span class="pill warn">😵 과로</span>`);
-  $('#status').innerHTML=st.join('');
+  const g=cg(), ph=phaseIdx();
+  $('#status').innerHTML='';
+  // HUD
+  const sub = S.team ? `${esc(S.team.name)} · ${S.tier}` : S.genre ? `${GENRES[S.genre].game} · 무소속` : '아마추어 게이머';
+  const pct = clamp(((S.age-14)+S.q/4)/15*100);
+  $('#hud').innerHTML = `
+    <div class="who"><div class="avatar">${S.genre?GENRES[S.genre].icon:'🎮'}</div>
+      <div><b>${esc(S.name)}</b><small>${sub} · ${S.family.emoji} ${S.family.name}</small></div></div>
+    <div class="life">
+      <div class="lt"><span><b>${S.age}세</b> · ${S.q+1}분기 (${quarterName()})</span><span>14세 → 29세</span></div>
+      <div class="track"><i style="width:${pct}%"></i></div>
+      <div class="steps">${PHASES.map((p,i)=>`<span class="${i<ph?'done':i===ph?'on':''}">${p}</span>`).join('')}</div>
+    </div>
+    <div class="hud-r">
+      <span class="mini">💰 <b>${won(S.money)}</b></span>
+      <span class="mini ${S.fatigue>70?'warn':''}">😵 피로 <b>${Math.round(S.fatigue)}</b></span>
+      <span class="mini">⭐ 특훈 <b>${S.special}</b></span>
+      ${S.injury>0?`<span class="mini bad">🩹 부상 ${S.injury}</span>`:''}
+      ${S.slump>0?`<span class="mini warn">🌧️ 슬럼프 ${S.slump}</span>`:''}
+    </div>`;
   // 스탯
-  const gb = GKEYS.map(k=>`<div class="genrebox ${S.genre===k?'main':''}">
-    <div class="t"><span>${GENRES[k].icon} ${GENRES[k].game}</span><span class="stars">${S.played[k]>=3?stars(k):'???'}</span></div>
-    <div class="muted">${tierOf(S.mmr[k])} ${S.mmr[k]}점 · 숙련도 ${Math.round(S.skill[k])} · 인기 ${S.meta[k].toFixed(2)}x</div></div>`).join('');
+  const others = GKEYS.filter(k=>k!==S.genre);
   $('#stats').innerHTML = `
-    <h3>${esc(S.name)} <span class="muted">· ${S.family.emoji} ${S.family.name}</span></h3>
-    <div class="power">${Math.round(pw())}<small>전투력 (${GENRES[g].name})</small></div>
-    ${S.team?`<div class="muted" style="font-size:12.5px;margin:4px 0 10px">팀 전력 ${Math.round(teamRating())} · 시즌 출전 ${S.seasons}회</div>`:'<div style="height:10px"></div>'}
-    <div class="bars">${bar('🖐️ 피지컬',S.phys)}${bar('🧠 운영',S.macro)}${bar('💎 멘탈',S.mental)}${bar('💪 체력',S.health)}${bar('⭐ 인기',S.pop)}${bar('📚 학업',S.edu)}${bar('😵 피로',S.fatigue,'fat')}</div>
-    <div class="kv"><span>💰 자산</span><b>${won(S.money)}</b></div>
-    <div class="kv"><span>🏆 우승</span><b>월드 ${S.trophies.worlds.length} · 리그 ${S.trophies.league.length}</b></div>
-    <div class="genres">${gb}</div>`;
-  // 다음 할 일 안내
-  let hint='';
-  if(!S.genre) hint = S.age>=15 ? '여러 게임을 해보며 재능을 찾아보자. 16살이 되면 주력 장르를 정한다.' : '여러 게임을 해보며 재능(별점)을 찾아보자.';
-  else if(!S.team) hint = `${GENRES[S.genre].game} 랭크 <b>${tierOf(TRYOUT_MMR)}</b> 달성 시 프로팀 스카우트! (현재 ${tierOf(S.mmr[S.genre])} ${S.mmr[S.genre]}점)`;
-  else if(S.tier==='2군') hint = `1군 승격 조건: 전투력 <b>${Math.round(teamRating()-8)}</b> 이상`;
-  else hint = `이번 분기: <b>${quarterName()}</b>`;
-  $('#next').innerHTML = `<div class="info">${hint}</div><div class="info">무엇을 할까?</div>`;
-  // 행동 버튼
+    <div class="powerbox"><div class="power">${Math.round(pw())}<small>전투력 · ${GENRES[g].name}</small></div>
+      <div class="muted">${S.team?`팀 전력 ${Math.round(teamRating())}<br>`:''}🏆 월드 ${S.trophies.worlds.length} · 리그 ${S.trophies.league.length}</div></div>
+    <div class="bars">${bar('🖐️ 피지컬',S.phys,'phys')}${bar('🧠 운영',S.macro,'macro')}${bar('💎 멘탈',S.mental,'mental')}${bar('💪 체력',S.health,'health')}${bar('⭐ 인기',S.pop,'pop')}${bar('📚 학업',S.edu,'edu')}${bar('😵 피로',S.fatigue,'fatigue')}</div>
+    <div class="genres">${S.genre
+      ? genreBox(S.genre) + `<details class="others"><summary>다른 장르 ${others.length}개 보기</summary>${others.map(genreBox).join('')}</details>`
+      : GKEYS.map(genreBox).join('')}</div>`;
+  // 목표
+  const G0 = goalInfo();
+  const warn = S.injury>0 ? '🩹 부상 중이라 랭크와 팀 연습을 할 수 없어요.' : S.fatigue>70 ? '⚠️ 피로가 높아요. 계속 무리하면 슬럼프나 부상이 올 수 있어요.' : '';
+  $('#goal').innerHTML = `<div class="goal"><div class="gt">${G0.icon} ${G0.t}</div><div class="gs">${esc(G0.s)}</div>
+    ${G0.max?`<div class="bar"><i style="width:${clamp(G0.cur/G0.max*100)}%"></i></div>`:''}${warn?`<div class="gw">${warn}</div>`:''}</div>`;
+  // 행동
   const acts=getActions();
-  $('#actions').innerHTML='';
-  acts.forEach(a=>{
-    const b=document.createElement('button'); b.className='act'; b.disabled=busy||!!a.dis;
-    b.innerHTML=`<span class="i">${a.icon}</span><b>${a.label}</b><small>${a.desc}</small>`;
-    b.onclick=()=>doAction(a); $('#actions').appendChild(b);
-  });
-  const sb=document.createElement('button'); sb.className='act sp'; sb.disabled=busy||S.special<=0;
-  sb.innerHTML=`<span class="i">⭐</span><b>특수훈련 ${S.special}/${SPECIAL_MAX}</b><small>인생에 5번! 강력한 성장</small>`;
-  sb.onclick=doSpecial; $('#actions').appendChild(sb);
+  const card = (a,i) => `<button class="act" data-act="${i}" ${busy||a.dis?'disabled':''}>
+    <div class="top"><span class="i">${a.icon}</span><b>${a.label}</b></div>${a.sub?`<small>${a.sub}</small>`:''}
+    <div class="tags">${a.tags.map(t=>`<span class="tag ${t.startsWith('피로')&&!t.includes('↓')?'cost':''}">${t}</span>`).join('')}</div></button>`;
+  let html='';
+  for(const [k,title] of [['train','🎯 훈련'],['care','🧩 관리']]){
+    const list=acts.map((a,i)=>[a,i]).filter(([a])=>a.group===k);
+    if(list.length) html += `<div class="agroup"><h4>${title}</h4><div class="actions">${list.map(([a,i])=>card(a,i)).join('')}</div></div>`;
+  }
+  html += `<button class="act sp" id="spBtn" ${busy||S.special<=0?'disabled':''}><span class="i">⭐</span>
+    <div class="grow"><b>특수훈련</b><small>인생에 5번! 크게 성장하는 특별 프로그램</small></div>
+    <span class="pips">${'●'.repeat(S.special)}${'○'.repeat(SPECIAL_MAX-S.special)}</span></button>`;
+  $('#actions').innerHTML = html;
+  $('#actions').querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>doAction(acts[+b.dataset.act]));
+  $('#spBtn').onclick = doSpecial;
   // 보조 버튼
-  const sub=[];
-  if(!S.genre && S.age>=15) sub.push(`<button class="sbtn" onclick="chooseGenreBtn()">🎯 주력 장르 정하기</button>`);
-  if(S.genre && S.age>=17) sub.push(`<button class="sbtn" onclick="askSwitch()">🔄 장르 전향</button>`);
-  if((S.team&&S.age>=22)||(!S.team&&S.age>=19)) sub.push(`<button class="sbtn" onclick="askRetire()">🏁 은퇴하기</button>`);
-  sub.push(`<button class="sbtn" onclick="if(confirm('처음부터 다시 시작할까요?')){storeSet('pg_save',null);restart();}">↺ 처음부터</button>`);
-  $('#subactions').innerHTML=sub.join('');
-  // 로그
-  $('#log').innerHTML = S.log.map(e=>`<div class="entry ${e.type}"><div class="when">${e.when}</div>${e.text}${e.chips}</div>`).join('');
+  const sub2=[];
+  if(!S.genre && S.age>=15) sub2.push(`<button class="sbtn" onclick="chooseGenreBtn()">🎯 주력 장르 정하기</button>`);
+  if(S.genre && S.age>=17) sub2.push(`<button class="sbtn" onclick="askSwitch()">🔄 장르 전향</button>`);
+  if((S.team&&S.age>=22)||(!S.team&&S.age>=19)) sub2.push(`<button class="sbtn" onclick="askRetire()">🏁 은퇴하기</button>`);
+  sub2.push(`<button class="sbtn" onclick="if(confirm('처음부터 다시 시작할까요?')){storeSet('pg_save',null);restart();}">↺ 처음부터</button>`);
+  $('#subactions').innerHTML=sub2.join('');
+  // 로그 (새 항목만 애니메이션)
+  const top = S.log[0] ? (S.log[0].id||0) : 0;
+  if(lastLogShown===null) lastLogShown = top;
+  $('#log').innerHTML = S.log.map(e=>`<div class="entry ${e.type} ${(e.id||0)>lastLogShown?'new':''}"><div class="when">${e.when}</div>${e.text}${e.chips}</div>`).join('');
+  lastLogShown = top;
 }
 async function chooseGenreBtn(){ if(busy) return; busy=true; await chooseGenre(false); busy=false; render(); save(); }
 
