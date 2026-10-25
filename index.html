@@ -238,7 +238,44 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border
 .fbmeta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin:4px 0 8px}
 .fbcheck{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:8px}
 .fberr{color:var(--bad);font-size:12.5px;margin-top:6px}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* 은퇴 회고 */
+.recap{position:fixed;inset:0;z-index:70;background:radial-gradient(ellipse at top,#1d2645 0%,#0a0d16 60%,#06080d 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 16px 48px;cursor:pointer;overflow:auto}
+.rc-top{position:absolute;top:14px;left:16px;right:16px;display:flex;gap:10px;align-items:center}
+.rc-dots{display:flex;gap:5px;flex:1}
+.rc-dots i{flex:1;height:3px;border-radius:3px;background:#262e42}
+.rc-dots i.on{background:#8fa6d6}
+.rc-dots i.cur{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.rc-skip{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:4px 12px;font-size:12.5px;white-space:nowrap}
+.rc-skip:hover{color:var(--text)}
+.rc-slide{max-width:640px;width:100%;text-align:center;animation:rcIn .6s ease-out}
+@keyframes rcIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.rc-kicker{letter-spacing:5px;font-size:12px;color:var(--accent);font-weight:800;margin-bottom:12px}
+.rc-big{font-size:clamp(36px,10vw,64px);font-weight:900;letter-spacing:-1px;line-height:1.15;background:linear-gradient(90deg,#fff,#b9c7ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.rc-h{font-size:clamp(20px,5.4vw,30px);font-weight:800;margin-bottom:16px;line-height:1.3}
+.rc-sub{color:var(--muted);font-size:15px;margin-top:12px}
+.rc-grades{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.rc-grades div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 18px;font-size:13px;color:var(--muted);min-width:84px}
+.rc-grades b{display:block;font-size:28px;line-height:1.2}
+.rc-tl{text-align:left;max-width:460px;margin:0 auto;border-left:2px solid #2c3a5e;padding-left:18px}
+.rc-tl div{opacity:0;animation:rcIn .5s ease-out forwards;margin-bottom:11px;position:relative;font-size:15px}
+.rc-tl div::before{content:"";position:absolute;left:-24px;top:7px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.rc-tl div.key::before{background:var(--gold);box-shadow:0 0 10px rgba(255,209,102,.6)}
+.rc-tl small{color:var(--muted);margin-right:8px;font-weight:700;font-size:13px}
+.rc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:560px){.rc-grid{grid-template-columns:repeat(2,1fr)}}
+.rc-grid div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 8px;opacity:0;animation:rcIn .5s ease-out forwards}
+.rc-grid b{display:block;font-size:24px;font-weight:800;line-height:1.3}
+.rc-grid span{font-size:12px;color:var(--muted)}
+.rc-trophies{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.rc-trophies div{opacity:0;animation:trophy .55s cubic-bezier(.2,1.6,.4,1) forwards;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 10px;min-width:100px;font-size:13px}
+.rc-trophies .ic{font-size:40px;display:block;line-height:1.2}
+.rc-trophies small{color:var(--muted);font-size:11.5px}
+.rc-trophies .w{border-color:var(--gold);box-shadow:0 0 30px rgba(255,209,102,.2)}
+@keyframes trophy{from{opacity:0;transform:scale(.3) translateY(20px)}to{opacity:1;transform:none}}
+.rc-title{display:inline-block;font-size:clamp(28px,8vw,48px);font-weight:900;padding:10px 26px;border-radius:18px;background:linear-gradient(90deg,var(--gold),#ff9f6b);color:#241500;animation:badge .9s cubic-bezier(.2,1.6,.4,1) both .5s;box-shadow:0 0 60px rgba(255,209,102,.35)}
+.rc-end{margin-top:28px;font-size:16px;padding:12px 22px}
+.rc-hint{position:absolute;bottom:16px;left:0;right:0;text-align:center;color:#5d6780;font-size:12px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rc-tl div,.rc-grid div,.rc-trophies div{opacity:1}}
 </style>
 </head>
 <body>
@@ -282,6 +319,7 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border
 </div>
 
 <div id="toast"></div>
+<div id="recap" class="recap hide" role="dialog" aria-label="커리어 회고"></div>
 <div class="ov" id="modal"><div class="modal">
   <h2 id="mTitle"></h2><div id="mBody"></div><div class="choices" id="mChoices"></div>
 </div></div>
@@ -434,7 +472,7 @@ function newLife(r, name){
     injury:0, slump:0, yearChamp:false,
     trophies:{league:[],worlds:[]}, champGenres:[], seasons:0, pogs:0, earned:0,
     peakPop:0, peakMmr:700, wasPro:false, was2:false, switched:false, tryCool:0,
-    rival:pick(RIVALS), special:5, flags:{}, seen:{}, cool:{}, history:[], log:[], ended:false
+    rival:pick(RIVALS), special:5, mw:0, ml:0, peakPw:0, flags:{}, seen:{}, cool:{}, history:[], log:[], ended:false
   };
 }
 
@@ -646,6 +684,7 @@ async function endOfTurn(){
   S.turn++; S.q++;
   if(S.q>3){ S.q=0; await newYear(); if(S.ended) return; }
   S.peakPop = Math.max(S.peakPop, S.pop);
+  if(S.genre) S.peakPw = Math.max(S.peakPw||0, pw());
   await milestones();
 }
 
@@ -751,6 +790,7 @@ async function featured(opp, stage, bo, weight=1){
   let w=0,l=0,n=1; const lines=[];
   while(w<need && l<need){ const win=chance(p); win?w++:l++; lines.push(setLine(g,n++,win)); }
   const win = w===need;
+  win ? S.mw++ : S.ml++;
   let pog=false;
   if(win && S.injury<=0 && chance(clamp(.2+(pw()-60)/60,.05,.7))){ pog=true; S.pogs++; }
   const meta=S.popMeta()[g];
@@ -765,7 +805,7 @@ async function featured(opp, stage, bo, weight=1){
 async function regularSeason(name){
   let w=0,l=0;
   (await featured(randomOpp(), `${name} 정규시즌 빅매치`, 3)) ? w++ : l++;
-  for(let i=0;i<6;i++) autoWin(randomOpp()) ? w++ : l++;
+  for(let i=0;i<6;i++){ const aw=autoWin(randomOpp()); aw ? (w++, S.mw++) : (l++, S.ml++); }
   S.seasons++;
   S.seed = w>=6?1 : w>=5?2 : w>=4?ri(3,4) : w>=3?ri(5,6) : ri(7,8);
   const txt = `${name} 정규시즌 ${w}승 ${l}패 · ${S.seed}위${S.seed<=4?' (플레이오프 진출!)':''}`;
@@ -967,7 +1007,106 @@ async function retire(){
     choices:careers.map(c=>({label:c.label, desc:c.req, disabled:!c.ok}))});
   S.career = careers[i].key;
   S.ended = true;
+  await showRecap();
   showEnding();
+}
+
+/* ================= 은퇴 회고 연출 ================= */
+function runCounts(root){
+  root.querySelectorAll('[data-count]').forEach(el=>{
+    const target=+el.dataset.count, suf=el.dataset.suf||'';
+    el.textContent = target.toLocaleString()+suf;
+    if(document.hidden || target===0) return;
+    const t0=performance.now();
+    const step=now=>{ const k=Math.min(1,(now-t0)/1100); el.textContent=Math.round(target*(1-Math.pow(1-k,3))).toLocaleString()+suf; if(k<1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+}
+function buildRecapSlides(){
+  const title=computeTitle(), [sub]=careerText();
+  const h=S.history, ageOf = re => (h.find(x=>re.test(x.text))||{}).age;
+  const debut=ageOf(/입단/), games=(S.mw||0)+(S.ml||0), rate=games?Math.round(S.mw/games*100):0;
+  const T=S.talent, gr=k=>`<b class="grade-${grade(T[k])}">${grade(T[k])}</b>`;
+  const path = S.careerGenres.length ? S.careerGenres.map(g=>`${GENRES[g].icon} ${GENRES[g].game}`).join(' → ') : '주력 장르를 정하지 못한 채';
+  const hl = h.filter(x=>x.type==='key'||x.type==='good').slice(1).slice(-8);
+  const slides=[];
+  // 1. 오프닝
+  slides.push({ms:3000, html:`<div class="rc-kicker">CAREER RECAP</div>
+    <div class="rc-big">${esc(S.name)}</div>
+    <div class="rc-sub">${S.wasPro ? `${S.age}세, 마지막 경기를 마치고 키보드를 내려놓았다.` : `${S.age}세, 프로의 꿈을 좇았던 ${S.age-14}년을 마무리하며.`}</div>`});
+  // 2. 출발점
+  slides.push({ms:3800, html:`<div class="rc-kicker">THE BEGINNING</div>
+    <div class="rc-h">14세, ${S.family.emoji} ${S.family.name}에서 태어난 게이머</div>
+    <div class="rc-grades"><div>피지컬${gr('phys')}</div><div>운영${gr('macro')}</div><div>멘탈${gr('mental')}</div></div>
+    <div class="rc-sub">${path}</div>`});
+  // 3. 하이라이트
+  slides.push({ms:1600+hl.length*650, html:`<div class="rc-kicker">HIGHLIGHTS</div><div class="rc-h">결정적인 순간들</div>
+    ${hl.length ? `<div class="rc-tl">${hl.map((x,i)=>`<div class="${x.type}" style="animation-delay:${.3+i*.55}s"><small>${x.age}세</small>${esc(x.text)}</div>`).join('')}</div>`
+      : '<div class="rc-sub">화려하진 않았지만, 매일 묵묵히 연습했던 나날이었다.</div>'}`});
+  // 4. 숫자로 보는 커리어
+  const cells = [
+    ['프로 데뷔', debut ? `<b data-count="${debut}" data-suf="세">${debut}세</b>` : '<b>—</b>'],
+    ['1군 시즌', `<b data-count="${S.seasons}">${S.seasons}</b>`],
+    ['공식전 전적', games ? `<b>${S.mw}승 ${S.ml}패</b>` : '<b>—</b>'],
+    ['승률', games ? `<b data-count="${rate}" data-suf="%">${rate}%</b>` : '<b>—</b>'],
+    ['POG', `<b data-count="${S.pogs}">${S.pogs}</b>`],
+    ['최고 티어', `<b style="font-size:18px">${tierOf(S.peakMmr)}</b>`],
+    ['최고 전투력', `<b data-count="${Math.round(S.peakPw||pw())}">${Math.round(S.peakPw||pw())}</b>`],
+    ['총 수입', `<b style="font-size:18px">${won(S.earned)}</b>`],
+  ];
+  slides.push({ms:5000, counts:true, html:`<div class="rc-kicker">BY THE NUMBERS</div><div class="rc-h">숫자로 보는 커리어</div>
+    <div class="rc-grid">${cells.map(([l,v],i)=>`<div style="animation-delay:${.15+i*.12}s">${v}<span>${l}</span></div>`).join('')}</div>`});
+  // 5. 트로피 룸
+  const tro = [
+    ...S.trophies.worlds.map(t=>({ic:'👑', name:'월드 챔피언', t, cls:'w'})),
+    ...S.trophies.league.map(t=>({ic:'🏆', name:'리그 우승', t, cls:''})),
+    ...(S.flags.gold ? [{ic:'🥇', name:'아시안게임', t:'금메달', cls:'w'}] : [])
+  ];
+  const shown = tro.slice(0,12), more = tro.length-shown.length;
+  slides.push({ms:tro.length ? 1800+shown.length*380 : 3200, html:`<div class="rc-kicker">TROPHY ROOM</div>
+    <div class="rc-h">${tro.length ? `트로피 ${tro.length}개` : '빈 트로피 진열장'}</div>
+    ${tro.length ? `<div class="rc-trophies">${shown.map((x,i)=>`<div class="${x.cls}" style="animation-delay:${.25+i*.32}s"><span class="ic">${x.ic}</span>${x.name}<br><small>${esc(x.t)}</small></div>`).join('')}</div>${more>0?`<div class="rc-sub">외 ${more}개</div>`:''}`
+      : '<div class="rc-sub">트로피는 없었지만, 꿈을 향한 도전만큼은 진짜였다.</div>'}`});
+  // 6. 피날레
+  slides.push({final:true, html:`<div class="rc-kicker">LEGACY</div>
+    <div class="rc-sub" style="margin-bottom:16px">${esc(S.name)}, 사람들은 이렇게 기억한다</div>
+    <div class="rc-title">${title}</div>
+    <div class="rc-sub" style="margin-top:18px">은퇴 후 · <b style="color:var(--text)">${sub}</b></div>
+    <button class="primary rc-end" data-end>📜 결과 카드 보기</button>`});
+  return slides;
+}
+function showRecap(){
+  return new Promise(done=>{
+    const slides=buildRecapSlides(), el=$('#recap');
+    let idx=0, timer=null, finished=false;
+    const show = i => {
+      clearTimeout(timer);
+      const sl=slides[i];
+      el.innerHTML = `<div class="rc-top"><div class="rc-dots">${slides.map((_,k)=>`<i class="${k<i?'on':k===i?'cur':''}"></i>`).join('')}</div>
+        <button class="rc-skip" data-skip>건너뛰기 ⏭</button></div>
+        <div class="rc-slide">${sl.html}</div>
+        ${sl.final?'':'<div class="rc-hint">화면을 누르면 다음으로</div>'}`;
+      if(sl.counts) runCounts(el);
+      if(!sl.final) timer=setTimeout(next, sl.ms);
+    };
+    const next = () => { if(idx<slides.length-1){ idx++; show(idx); } };
+    const finish = () => {
+      if(finished) return; finished=true;
+      clearTimeout(timer); el.classList.add('hide'); el.innerHTML='';
+      document.removeEventListener('keydown', onKey); done();
+    };
+    const onKey = e => {
+      if(e.key==='Escape') finish();
+      else if(e.key==='Enter'||e.key===' '||e.key==='ArrowRight'){ e.preventDefault(); slides[idx].final ? finish() : next(); }
+    };
+    el.onclick = e => {
+      if(e.target.closest('[data-skip]') || e.target.closest('[data-end]')) return finish();
+      if(!slides[idx].final) next();
+    };
+    document.addEventListener('keydown', onKey);
+    el.classList.remove('hide');
+    show(0);
+  });
 }
 
 /* ================= 엔딩 ================= */
@@ -1217,6 +1356,8 @@ function attachMeta(){
   S.apt = {...perG(()=>rand(.8,1.25)), ...S.apt};
   if(!S.careerGenres) S.careerGenres = S.genre ? [S.genre] : [];
   if(S.special==null) S.special = 5;
+  if(S.mw==null){ S.mw=0; S.ml=0; }
+  if(S.peakPw==null) S.peakPw=0;
   S.popMeta=()=>S.meta;
 }
 function save(){ if(S && !S.ended){ const c={...S}; delete c.popMeta; storeSet('pg_save', c); } }
