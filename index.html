@@ -3,7 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>프로게이머 키우기</title>
+<title>프로게이머 키우기 - 무료 웹 인생 시뮬레이션 게임</title>
+<meta name="description" content="14살 게이머로 태어나 프로 데뷔, 리그 우승, 월드 챔피언까지! MOBA·FPS·RTS·격투·배틀로얄 중 장르를 골라 키우는 무료 프로게이머 인생 시뮬레이션 웹게임. 설치 없이 바로 플레이.">
+<meta name="keywords" content="프로게이머 키우기, 인생게임, 인생 시뮬레이션, 웹게임, 육성 게임, 이스포츠, 무료 게임, 브라우저 게임">
+<link rel="canonical" href="https://bsh0401.github.io/Web_Game/">
+<meta name="theme-color" content="#0c0f16">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="프로게이머 키우기">
+<meta property="og:title" content="프로게이머 키우기 - 무료 웹 인생 시뮬레이션">
+<meta property="og:description" content="14살 게이머에서 월드 챔피언까지. 장르를 골라 나만의 프로게이머 인생을 키워보세요!">
+<meta property="og:url" content="https://bsh0401.github.io/Web_Game/">
+<meta property="og:image" content="https://bsh0401.github.io/Web_Game/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"프로게이머 키우기","url":"https://bsh0401.github.io/Web_Game/","description":"MOBA·FPS·RTS·격투·배틀로얄 중 장르를 골라 프로게이머 인생을 키우는 무료 웹 인생 시뮬레이션 게임","genre":["Simulation","Life simulation"],"gamePlatform":"Web browser","applicationCategory":"Game","inLanguage":"ko","offers":{"@type":"Offer","price":"0","priceCurrency":"KRW"}}
+</script>
 <style>
 :root{
   --bg:#0c0f16; --panel:#151a25; --panel2:#1c2231; --line:#2a3246;
@@ -103,12 +122,15 @@ input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line
 .tl div::before{content:"";position:absolute;left:-17px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--line)}
 .tl div.good::before{background:var(--good)} .tl div.bad::before{background:var(--bad)} .tl div.key::before{background:var(--gold)}
 .hide{display:none!important}
+.about{max-width:760px;margin:40px auto 10px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+.about h2{font-size:15px;color:var(--text);margin:0 0 6px}
+.about p{margin:6px 0}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="logo">🎮 <span>프로게이머 키우기</span></div>
+    <h1 class="logo" style="margin:0">🎮 <span>프로게이머 키우기</span></h1>
     <div class="status" id="status"></div>
   </header>
 
@@ -133,6 +155,13 @@ input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line
 
   <!-- 엔딩 -->
   <section id="ending" class="center hide"></section>
+
+  <footer class="about">
+    <h2>프로게이머 키우기는 어떤 게임인가요?</h2>
+    <p>게임을 사랑하는 14살로 태어나 프로게이머의 인생을 키우는 무료 웹 인생 시뮬레이션 게임입니다. 설치나 회원가입 없이 PC와 모바일 브라우저에서 바로 플레이할 수 있습니다.</p>
+    <p>MOBA, FPS, RTS, 격투, 배틀로얄 다섯 장르를 해보며 숨은 재능을 찾고, 솔로랭크로 실력을 쌓아 프로팀 스카우트를 받으세요. 2군에서 1군으로 승격하고, 리그 우승과 월드 챔피언에 도전합니다. 피로와 슬럼프, 악플, 해외 이적, 국가대표 발탁 같은 30여 가지 이벤트가 매번 다른 인생을 만들어 줍니다.</p>
+    <p>은퇴한 뒤에는 코치, 해설위원, 스트리머, 사업가 중에서 두 번째 인생을 고르고, 칭호와 인생 연표가 담긴 결과 카드를 친구에게 공유해 보세요.</p>
+  </footer>
 </div>
 
 <div class="ov" id="modal"><div class="modal">
