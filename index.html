@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>프로게이머 키우기</title>
+<style>
+:root{
+  --bg:#0c0f16; --panel:#151a25; --panel2:#1c2231; --line:#2a3246;
+  --text:#e9edf5; --muted:#8b95aa; --accent:#4f8cff; --accent2:#a46bff;
+  --good:#3ecf8e; --bad:#ff5d6c; --warn:#ffb547; --gold:#ffd166;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;font-size:15px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:1120px;margin:0 auto;padding:16px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.logo{font-weight:800;font-size:22px;letter-spacing:-.5px}
+.logo span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.status{display:flex;gap:8px;flex-wrap:wrap}
+.pill{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13px;white-space:nowrap}
+.pill.hot{border-color:var(--accent);color:#cfe0ff}
+.pill.bad{border-color:var(--bad);color:#ffc2c8}
+.pill.warn{border-color:var(--warn);color:#ffe0b0}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:14px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}.bars{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}.genres{display:grid;grid-template-columns:1fr 1fr;gap:8px}.genres .genrebox{margin-top:0}}
+.genres{margin-top:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card h3{margin:0 0 10px;font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.3px}
+.stat{margin-bottom:9px}
+.stat .row{display:flex;justify-content:space-between;font-size:13px}
+.bar{height:7px;background:#0b0e15;border-radius:9px;overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+.bar.fat i{background:linear-gradient(90deg,var(--good),var(--warn),var(--bad))}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-top:1px dashed var(--line)}
+.kv b{font-weight:600}
+.genrebox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-top:8px;font-size:13px}
+.genrebox.main{border-color:var(--accent)}
+.genrebox .t{display:flex;justify-content:space-between;font-weight:600}
+.stars{color:var(--gold);letter-spacing:1px}
+.power{font-size:30px;font-weight:800;line-height:1}
+.power small{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px}
+.next{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.next .info{font-size:13px;color:var(--muted)}
+.next .info b{color:var(--text)}
+.actions{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.act{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 11px;text-align:left;transition:.15s}
+.act:hover:not(:disabled){border-color:var(--accent);transform:translateY(-1px)}
+.act:disabled{opacity:.35;cursor:not-allowed}
+.act .i{font-size:20px}
+.act b{display:block;font-size:14px;margin-top:2px}
+.act small{display:block;color:var(--muted);font-size:12px}
+.sub{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.sbtn{background:transparent;border:1px solid var(--line);border-radius:9px;padding:6px 11px;font-size:13px;color:var(--muted)}
+.sbtn:hover{color:var(--text);border-color:var(--accent2)}
+.log{max-height:430px;overflow:auto;margin-top:6px;padding-right:4px}
+.entry{border-left:3px solid var(--line);padding:6px 10px;margin-bottom:8px;font-size:13.5px}
+.entry .when{font-size:11px;color:var(--muted)}
+.entry.good{border-color:var(--good)} .entry.bad{border-color:var(--bad)} .entry.key{border-color:var(--gold)} .entry.news{border-color:var(--accent2)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.chip{font-size:11.5px;padding:1px 7px;border-radius:6px;background:#0b0e15;border:1px solid var(--line)}
+.chip.up{color:var(--good)} .chip.down{color:var(--bad)}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(5,7,12,.72);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.ov.show{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:18px;animation:pop .18s ease-out}
+@keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
+.modal h2{margin:0 0 8px;font-size:19px}
+.modal p{margin:6px 0}
+.choices{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.choice{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 12px;text-align:left}
+.choice:hover:not(:disabled){border-color:var(--accent)}
+.choice:disabled{opacity:.35;cursor:not-allowed}
+.choice small{display:block;color:var(--muted);font-size:12px}
+.vs{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel2);border-radius:12px;padding:10px 12px;margin:8px 0;font-weight:700}
+.vs .mid{color:var(--muted);font-size:13px}
+.score{font-size:34px;font-weight:800;text-align:center;margin:6px 0}
+.pbp{list-style:none;padding:0;margin:8px 0;font-size:13.5px}
+.pbp li{padding:5px 8px;border-radius:8px;margin-bottom:4px;background:var(--panel2)}
+.pbp li.w{border-left:3px solid var(--good)} .pbp li.l{border-left:3px solid var(--bad)}
+.pog{color:var(--gold);font-weight:700;text-align:center}
+.prob{height:8px;background:var(--bad);border-radius:9px;overflow:hidden}
+.prob i{display:block;height:100%;background:var(--good)}
+/* start & ending */
+.center{max-width:560px;margin:30px auto}
+.big{font-size:30px;font-weight:800;margin:0 0 4px;letter-spacing:-.5px}
+.muted{color:var(--muted)}
+.gacha{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.gcell{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px}
+.gcell .l{font-size:12px;color:var(--muted)}
+.gcell .v{font-size:18px;font-weight:700}
+.grade-S{color:var(--gold)} .grade-A{color:#9fd0ff} .grade-B{color:var(--text)} .grade-C{color:#b8a98a} .grade-D{color:var(--bad)}
+input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit}
+.primary{background:linear-gradient(90deg,var(--accent),var(--accent2));border:0;border-radius:11px;padding:11px 18px;font-weight:700;color:#fff}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:11px;padding:10px 16px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.endcard{border:2px solid transparent;background:linear-gradient(var(--panel),var(--panel)) padding-box,linear-gradient(135deg,var(--accent),var(--accent2),var(--gold)) border-box;border-radius:18px;padding:20px}
+.title-badge{display:inline-block;background:linear-gradient(90deg,var(--gold),#ff9f6b);color:#241500;font-weight:800;border-radius:9px;padding:4px 12px;margin:6px 0}
+.trophy{font-size:15px;margin:3px 0}
+.tl{border-left:2px solid var(--line);margin:10px 0 0 6px;padding-left:12px}
+.tl div{font-size:13px;margin-bottom:5px;position:relative}
+.tl div::before{content:"";position:absolute;left:-17px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--line)}
+.tl div.good::before{background:var(--good)} .tl div.bad::before{background:var(--bad)} .tl div.key::before{background:var(--gold)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">🎮 <span>프로게이머 키우기</span></div>
+    <div class="status" id="status"></div>
+  </header>
+
+  <!-- 시작 화면 -->
+  <section id="start" class="center card"></section>
+
+  <!-- 게임 화면 -->
+  <section id="game" class="grid hide">
+    <aside class="card" id="stats"></aside>
+    <main>
+      <div class="card">
+        <div class="next" id="next"></div>
+        <div class="actions" id="actions"></div>
+        <div class="sub" id="subactions"></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h3>📜 인생 기록</h3>
+        <div class="log" id="log"></div>
+      </div>
+    </main>
+  </section>
+
+  <!-- 엔딩 -->
+  <section id="ending" class="center hide"></section>
+</div>
+
+<div class="ov" id="modal"><div class="modal">
+  <h2 id="mTitle"></h2><div id="mBody"></div><div class="choices" id="mChoices"></div>
+</div></div>
+
+<script>
+/* ================= 기본 데이터 ================= */
+const GENRES = {
+  moba: {
+    name:'MOBA', game:'배틀 오브 히어로즈', icon:'⚔️',
+    w:{phys:.30, macro:.45, mental:.25},
+    desc:'운영·팀워크가 중요. 연봉이 높고 경쟁이 치열하다.',
+    tactics:[
+      {label:'⚡ 한타 각 보기', desc:'피지컬로 승부. 고위험 고수익', mod:()=>(S.phys-60)/140 + rand(-.18,.18)},
+      {label:'🧠 운영으로 굴리기', desc:'운영 능력 활용. 안정적', mod:()=>(S.macro-60)/180 + rand(-.05,.05)},
+      {label:'🎯 상대 에이스 봉쇄', desc:'멘탈 싸움. 중간 위험', mod:()=>(S.mental-60)/160 + rand(-.1,.1)},
+    ],
+    win:['거대 수호자 앞 한타 대승! 그대로 밀고 들어갔다.','초반 솔로킬로 스노우볼을 굴렸다.','고대 용 스틸 성공! 짜릿한 역전승!','완벽한 시야 장악으로 상대를 질식시켰다.','백도어 성공! 관중석이 뒤집어졌다.'],
+    lose:['한타 한 번에 무너졌다...','상대 정글러에게 초반부터 휘둘렸다.','고대 용을 스틸당하며 역전패.','운영 싸움에서 밀려 천천히 졌다.','교전 판단 미스가 뼈아팠다.']
+  },
+  fps: {
+    name:'FPS', game:'택티컬 스트라이크', icon:'🎯',
+    w:{phys:.60, macro:.15, mental:.25},
+    desc:'반응속도(피지컬)가 전부. 전성기가 빠르고 짧다.',
+    tactics:[
+      {label:'💥 엔트리 돌격', desc:'피지컬로 첫 킬을 딴다. 고위험', mod:()=>(S.phys-60)/130 + rand(-.18,.18)},
+      {label:'🛰️ 정보전 & 리테이크', desc:'운영으로 침착하게. 안정적', mod:()=>(S.macro-55)/180 + rand(-.05,.05)},
+      {label:'🧊 클러치를 믿어라', desc:'멘탈 승부. 극단적 결과', mod:()=>(S.mental-60)/120 + rand(-.25,.25)},
+    ],
+    maps:['헤이븐 시티','더스트 포트','아이스박스 랩','사막 기지','네온 타워','폐공장'],
+    win:['에이스 클러치! 1:4 역전 라운드','완벽한 리테이크','오퍼 2연속 헤드샷','에코 라운드 승리로 흐름을 잡았다'],
+    lose:['피스톨 라운드부터 꼬였다','상대 오퍼에게 연속 헤드샷','클러치 상황에서 아쉬운 실수','상대의 속공에 대응하지 못했다']
+  }
+};
+const TEAMS = {
+  moba:[['서울 드래곤즈',82],['부산 타이탄즈',78],['인천 팬텀',74],['대구 블레이즈',70],['광주 스톰',66],['수원 나이츠',62],['대전 볼트',57],['제주 웨이브',52]],
+  fps:[['스틸 이글스',82],['네온 바이퍼',78],['크림슨 팽',74],['아이언 호크',70],['블랙 로터스',66],['실버 울프',62],['썬더 레이븐',57],['노바 스쿼드',52]]
+};
+const WORLD = ['LA 피닉스','베를린 울브즈','상하이 드래곤','도쿄 사무라이','상파울루 재규어','파리 레볼루션','스톡홀름 바이킹','코펜하겐 라이온'];
+const RIVALS = ['블레이즈','섀도우','루나','제로','카이저','미라지'];
+const FAMILIES = [
+  {name:'금수저', emoji:'💰', money:5000, support:.9, mental:0, desc:'든든한 지원. 장비 걱정 없음'},
+  {name:'평범한 집', emoji:'🏠', money:500, support:.5, mental:0, desc:'평범하지만 따뜻한 집'},
+  {name:'흙수저', emoji:'🧱', money:30, support:.2, mental:10, desc:'헝그리 정신! 멘탈 +10'}
+];
+const TIERS = [[0,'브론즈'],[1000,'실버'],[1400,'골드'],[1800,'플래티넘'],[2100,'다이아'],[2400,'마스터'],[2650,'그랜드마스터'],[2850,'챌린저']];
+const TRYOUT_MMR = 2100;
+const STAT_LABEL = {phys:'피지컬',macro:'운영',mental:'멘탈',health:'체력',pop:'인기',edu:'학업',fatigue:'피로',money:'돈',skill:'숙련도',mmr:'랭크점수'};
+
+/* ================= 유틸 ================= */
+const $ = s => document.querySelector(s);
+const rand = (a,b) => a + Math.random()*(b-a);
+const ri = (a,b) => Math.floor(rand(a,b+1));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const clamp = (v,a=0,b=100) => Math.max(a,Math.min(b,v));
+const chance = p => Math.random() < p;
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function won(m){ m=Math.round(m); return Math.abs(m)>=10000 ? (m/10000).toFixed(1)+'억원' : m.toLocaleString()+'만원'; }
+const tierOf = m => { let t=TIERS[0][1]; for(const [v,n] of TIERS) if(m>=v) t=n; return t; };
+const other = g => g==='moba' ? 'fps' : 'moba';
+function grade(x){ return x>=1.2?'S':x>=1.08?'A':x>=.95?'B':x>=.87?'C':'D'; }
+function stars(g){ const n=clamp(Math.round((S.apt[g]-.8)/.45*4)+1,1,5); return '★'.repeat(n)+'☆'.repeat(5-n); }
+function storeGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+function storeSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+/* ================= 상태 ================= */
+let S = null, busy = false, roll = null, rerolls = 3;
+
+function rollBirth(){
+  const r = Math.random();
+  const family = r<.15 ? FAMILIES[0] : r<.75 ? FAMILIES[1] : FAMILIES[2];
+  return {
+    family,
+    talent:{phys:rand(.8,1.3), macro:rand(.8,1.3), mental:rand(.8,1.3)},
+    base:{phys:ri(15,35), macro:ri(15,35), mental:ri(25,50)+family.mental, health:ri(30,60), edu:ri(20,60)},
+    apt:{moba:rand(.8,1.25), fps:rand(.8,1.25)}
+  };
+}
+
+function newLife(r, name){
+  return {
+    name, family:r.family, talent:r.talent, apt:r.apt,
+    age:14, q:0, turn:0,
+    phys:r.base.phys, macro:r.base.macro, mental:clamp(r.base.mental), health:r.base.health, edu:r.base.edu,
+    pop:0, fatigue:10, money:r.family.money,
+    skill:{moba:0,fps:0}, mmr:{moba:700,fps:700}, played:{moba:0,fps:0},
+    genre:null, team:null, tier:null, teamBonus:0, salaryMul:1, abroad:false, seed:99,
+    injury:0, slump:0, yearChamp:false,
+    trophies:{league:[],worlds:[]}, champGenres:[], seasons:0, pogs:0, earned:0,
+    peakPop:0, peakMmr:700, wasPro:false, was2:false, switched:false, tryCool:0,
+    rival:pick(RIVALS), flags:{}, seen:{}, cool:{}, history:[], log:[], ended:false
+  };
+}
+
+/* ================= 핵심 계산 ================= */
+const cg = () => S.genre || (S.played.fps > S.played.moba ? 'fps' : 'moba');
+function power(g=cg()){
+  const w = GENRES[g].w;
+  let p = (w.phys*S.phys + w.macro*S.macro + w.mental*S.mental) * (.55 + S.skill[g]/220) * S.apt[g];
+  if(S.fatigue>70) p *= .88;
+  if(S.slump>0) p *= .82;
+  if(g==='fps' && S.age>24) p *= 1-(S.age-24)*.04;
+  return p;
+}
+const pw = () => power();
+function teamRating(){ return S.team ? S.team.rating + S.teamBonus : 0; }
+function teamStr(){ return .6*teamRating() + .4*(S.injury>0 ? teamRating()-8 : pw()); }
+function winProb(opp){ return 1/(1+Math.exp(-(teamStr()-opp.rating)/8)); }
+
+function grow(key, rate){
+  const mult = (S.slump>0?.5:1) * (S.talent[key]||1);
+  S[key] = clamp(S[key] + (100-S[key])*rate*mult);
+}
+function growSkill(g, rate){
+  const mult = (S.slump>0?.5:1) * S.apt[g];
+  S.skill[g] = clamp(S.skill[g] + (100-S.skill[g])*rate*mult);
+}
+function tire(n){ S.fatigue = clamp(S.fatigue + Math.max(2, n - S.health/12)); }
+function fx(o){
+  for(const k in o){
+    const v=o[k];
+    if(k==='skill') S.skill[cg()] = clamp(S.skill[cg()]+v);
+    else if(k==='mmr'){ const g=cg(); S.mmr[g]=Math.max(0,S.mmr[g]+v); S.peakMmr=Math.max(S.peakMmr,S.mmr[g]); }
+    else if(k==='money') S.money += v;
+    else if(k==='teamBonus') S.teamBonus = clamp(S.teamBonus+v,-8,8);
+    else S[k] = clamp(S[k]+v);
+  }
+  return '';
+}
+function snap(){ return {phys:S.phys,macro:S.macro,mental:S.mental,health:S.health,pop:S.pop,edu:S.edu,fatigue:S.fatigue,money:S.money,skill:S.skill[cg()],mmr:S.mmr[cg()]}; }
+function diffHtml(a,b){
+  const out=[];
+  for(const k in a){
+    const d = Math.round(b[k]-a[k]);
+    if(!d) continue;
+    const goodUp = k!=='fatigue';
+    const cls = (d>0)===goodUp ? 'up' : 'down';
+    const val = k==='money' ? (d>0?'+':'')+won(d) : (d>0?'+':'')+d;
+    out.push(`<span class="chip ${cls}">${STAT_LABEL[k]} ${val}</span>`);
+  }
+  return out.length ? `<div class="chips">${out.join('')}</div>` : '';
+}
+function hist(text,type='key'){ S.history.push({age:S.age,q:S.q,text,type}); }
+function log(text, chips='', type=''){ S.log.unshift({when:`${S.age}세 ${S.q+1}분기`, text, chips, type}); if(S.log.length>80) S.log.pop(); }
+
+/* ================= 모달 ================= */
+function modal({title, html='', choices=[{label:'확인'}]}){
+  return new Promise(res=>{
+    $('#mTitle').textContent = title;
+    $('#mBody').innerHTML = html;
+    const box = $('#mChoices'); box.innerHTML='';
+    choices.forEach((c,i)=>{
+      const b=document.createElement('button');
+      b.className='choice'; b.disabled=!!c.disabled;
+      b.innerHTML=`<b>${c.label}</b>${c.desc?`<small>${c.desc}</small>`:''}`;
+      b.onclick=()=>{ $('#modal').classList.remove('show'); res(i); };
+      box.appendChild(b);
+    });
+    $('#modal').classList.add('show');
+  });
+}
+const info = (title, html) => modal({title, html});
+
+/* ================= 행동 ================= */
+function soloq(g){
+  S.played[g]++;
+  growSkill(g, .12);
+  grow('phys', S.age<20 ? .055 : .03);
+  grow('mental', .015);
+  tire(17);
+  const target = power(g)*45;
+  const delta = Math.round((target - S.mmr[g])*.3 + rand(-90,90));
+  S.mmr[g] = Math.max(0, S.mmr[g]+delta);
+  S.peakMmr = Math.max(S.peakMmr, S.mmr[g]);
+  let msg = `${GENRES[g].game} 솔로랭크를 달렸다. ${tierOf(S.mmr[g])} (${delta>=0?'+':''}${delta}점)`;
+  if(S.played[g]===3) msg += `<br>💡 ${GENRES[g].game}에 대한 재능이 보인다: <span class="stars">${stars(g)}</span>`;
+  return msg;
+}
+function getActions(){
+  const inj = S.injury>0, A=[];
+  if(!S.genre){
+    for(const g of ['moba','fps']) A.push({icon:GENRES[g].icon, label:`랭크: ${GENRES[g].game}`, desc:'숙련도·피지컬·랭크↑ 피로↑', dis:inj, run:()=>soloq(g)});
+  } else {
+    const g=S.genre;
+    A.push({icon:GENRES[g].icon, label:'솔로랭크', desc:'숙련도·피지컬·랭크↑ 피로↑', dis:inj, run:()=>soloq(g)});
+  }
+  if(S.team) A.push({icon:'👥', label:'팀 연습', desc:'숙련도·운영·팀 호흡↑', dis:inj, run:()=>{
+    growSkill(S.genre,.09); grow('macro',.04); fx({teamBonus:.6}); tire(15);
+    return '팀원들과 스크림을 돌렸다. 호흡이 점점 맞아간다.'; }});
+  A.push({icon:'🧠', label:'전략 분석', desc:'운영↑ (VOD·메타 공부)', run:()=>{
+    grow('macro',.07); if(S.genre) growSkill(S.genre,.03); tire(8);
+    return '프로 경기 VOD를 돌려보며 운영을 공부했다.'; }});
+  A.push({icon:'🏃', label:'운동', desc:'체력↑ 피지컬 소폭↑', run:()=>{
+    grow('health',.1); grow('phys',.025); tire(5); S.fatigue=clamp(S.fatigue-4);
+    return inj ? '재활 운동으로 손목을 관리했다.' : '헬스장에서 땀을 흘렸다. 몸이 가볍다.'; }});
+  A.push({icon:'📺', label:'방송', desc:'인기·돈↑', run:()=>{
+    const meta = S.genre ? S.popMeta()[S.genre] : 1;
+    const gain = (2 + (S.team?1.5:0)) * meta * (1 - S.pop/130);
+    const cash = Math.round(S.pop*4*meta + 20);
+    S.pop = clamp(S.pop+gain); S.money += cash; S.earned += cash; tire(6);
+    return `개인 방송을 켰다. 시청자 ${Math.round(30+S.pop*S.pop*3)}명!`; }});
+  A.push({icon:'🛌', label:'휴식', desc:'피로↓↓ 멘탈↑', run:()=>{
+    S.fatigue=clamp(S.fatigue-40); grow('mental',.06);
+    return '푹 쉬었다. 머리가 맑아졌다.'; }});
+  if(S.age<19) A.push({icon:'📚', label:'학교 공부', desc:'학업↑ 부모님 신뢰↑', run:()=>{
+    grow('edu',.1); tire(6); S.flags.trust=(S.flags.trust||0)+1;
+    return '학교 수업에 집중했다. 부모님이 흐뭇해하신다.'; }});
+  return A;
+}
+async function doAction(a){
+  if(busy || S.ended) return;
+  busy=true; render();
+  const b=snap();
+  const msg=a.run();
+  log(`${a.icon} ${msg}`, diffHtml(b,snap()));
+  render();
+  await endOfTurn();
+  busy=false;
+  if(!S.ended){ render(); save(); }
+}
+
+/* ================= 턴 진행 ================= */
+async function endOfTurn(){
+  S.fatigue = clamp(S.fatigue-6);
+  S.pop = clamp(S.pop - S.pop*.03); // 인기는 가만히 두면 조금씩 식는다
+  // 컨디션
+  if(S.injury>0){ S.injury--; if(!S.injury) log('🩹 부상에서 회복했다!','', 'good'); }
+  else if(S.fatigue>90 && chance(.35)){
+    S.injury=2; S.phys=clamp(S.phys-3); hist('과로로 손목 부상','bad');
+    await info('🚑 부상!', '<p>무리한 연습 끝에 손목 부상을 당했다.<br>2분기 동안 랭크와 팀 연습을 할 수 없다.</p>');
+  }
+  if(S.slump>0){ S.slump--; if(!S.slump) log('🌤️ 슬럼프에서 벗어났다.','', 'good'); }
+  else if((S.fatigue>75 && chance(.3)) || (S.mental<20 && chance(.4))){
+    S.slump=2; hist('슬럼프','bad');
+    await info('🌧️ 슬럼프', '<p>손이 굳은 것 같다. 아무리 해도 실력이 늘지 않는다...<br>(2분기 동안 성장 절반, 전투력 하락)</p>');
+  }
+  // 시즌
+  if(S.tier==='1군') await seasonStep();
+  else if(S.tier==='2군' && pw() >= teamRating()-8){
+    S.tier='1군'; S.wasPro=true; S.seed=99; hist(`${S.team.name} 1군 승격!`,'key');
+    await info('⬆️ 1군 승격!', `<p>감독이 불렀다. "다음 시즌부터 1군 주전이다."</p><p><b>${esc(S.team.name)}</b> 1군 데뷔!</p>`);
+  }
+  // 수입
+  if(S.tier){
+    const meta = S.popMeta()[S.genre];
+    const sal = S.tier==='1군' ? Math.round((400 + pw()*8 + S.pop*8) * meta * S.salaryMul) : 150;
+    S.money += sal; S.earned += sal;
+  }
+  // 랜덤 이벤트
+  if(chance(.55)) await randomEvent();
+  if(S.ended) return;
+  // 시간 흐름
+  S.turn++; S.q++;
+  if(S.q>3){ S.q=0; await newYear(); if(S.ended) return; }
+  S.peakPop = Math.max(S.peakPop, S.pop);
+  await milestones();
+}
+
+async function newYear(){
+  S.age++; S.yearChamp=false;
+  if(S.age>=23){ S.phys = clamp(S.phys - (S.age-22)*2); }
+  if(S.age>=24){ S.mental = clamp(S.mental - 1); }
+  if(S.age>=26){ S.health = clamp(S.health-2); }
+  // 메타 변화
+  const news=[];
+  for(const g of ['moba','fps']){
+    const before=S.meta[g];
+    S.meta[g] = clamp(before*rand(.85,1.17), .6, 1.6);
+    const d=S.meta[g]-before;
+    if(d>.1) news.push(`🔥 ${GENRES[g].game} 시청자 급증! 리그 연봉·인기 상승`);
+    if(d<-.1) news.push(`📉 ${GENRES[g].game} 인기 하락, 리그 축소 우려`);
+  }
+  if(S.age>=15) news.forEach(n=>log(n,'','news'));
+  log(`🎂 ${S.age}살이 되었다.`);
+  if(S.age>=29){ await info('⏳ 은퇴할 시간', '<p>몸이 예전 같지 않다. 선수 생활의 마침표를 찍을 때가 왔다.</p>'); await retire(); return; }
+  if(!S.team && S.age>=22){ await info('🌙 꿈의 끝', '<p>프로의 문은 끝내 열리지 않았다. 이제 다른 길을 찾아야 한다.</p>'); await retire(); return; }
+  if(!S.team && S.age===20 && !S.flags.lastChance){
+    const i = await modal({title:'🤔 진로 고민', html:'<p>스무 살. 친구들은 대학에 가거나 일을 시작했다.<br>아직 프로 팀의 연락은 없다.</p>', choices:[
+      {label:'딱 2년만 더 도전한다', desc:'22살까지 프로가 못 되면 끝'},
+      {label:'꿈을 접고 현실로 돌아간다', desc:'지금 인생을 마무리'}]});
+    if(i===1){ await retire(); return; }
+    S.flags.lastChance=true; hist('2년 더 도전하기로 결심','key');
+  }
+}
+
+async function milestones(){
+  // 주력 장르 결정
+  if(!S.genre && S.age>=16){ await chooseGenre(true); }
+  // 입단 테스트
+  if(S.genre && !S.team && S.age>=16 && S.mmr[S.genre]>=TRYOUT_MMR && S.turn>=S.tryCool) await tryout();
+}
+
+async function chooseGenre(forced){
+  const html = ['moba','fps'].map(g=>`<div class="genrebox"><div class="t"><span>${GENRES[g].icon} ${GENRES[g].game} <small class="muted">${GENRES[g].name}</small></span>
+    <span class="stars">${S.played[g]>=3?stars(g):'??? '}</span></div>
+    <div class="muted">${GENRES[g].desc}</div>
+    <div>랭크 ${tierOf(S.mmr[g])} · 숙련도 ${Math.round(S.skill[g])} · 리그 인기 ${S.meta[g].toFixed(2)}x</div></div>`).join('');
+  const choices=['moba','fps'].map(g=>({label:`${GENRES[g].icon} ${GENRES[g].game}에 올인`, desc:`예상 전투력 ${Math.round(power(g))}`}));
+  if(!forced) choices.push({label:'아직 더 고민한다'});
+  const i = await modal({title:'🎯 주력 장르 선택', html:`<p>${forced?'열여섯 살. 이제 한 길을 정해야 할 때다.':'어떤 게임으로 프로를 노릴까?'}</p>${html}`, choices});
+  if(i>1) return;
+  const g=['moba','fps'][i];
+  S.genre=g; hist(`${GENRES[g].game}(${GENRES[g].name})를 주력 장르로 결정`,'key');
+  log(`🎯 주력 장르: ${GENRES[g].game}`,'','key');
+}
+
+async function tryout(){
+  const g=S.genre, p=pw();
+  let list = TEAMS[g].map(([name,rating])=>({name,rating})).filter(t=>t.rating<=p+18).sort((a,b)=>b.rating-a.rating).slice(0,3);
+  if(!list.length) list=[{name:TEAMS[g][7][0], rating:TEAMS[g][7][1]}];
+  const choices = list.map(t=>({label:`${t.name} 입단`, desc:`팀 전력 ${t.rating} · ${p>=t.rating-8?'바로 1군 주전!':'2군(연습생)부터 시작'}`}));
+  choices.push({label:'아직 준비가 덜 됐다', desc:'다음 기회를 노린다'});
+  const i = await modal({title:'📞 프로팀 스카우트!', html:`<p>${tierOf(S.mmr[g])} 랭커가 된 당신에게 프로팀들의 연락이 왔다!</p><p class="muted">현재 전투력 ${Math.round(p)}</p>`, choices});
+  if(i===list.length){ S.tryCool=S.turn+2; return; }
+  joinTeam(list[i]);
+  await info('✍️ 계약 완료', `<p><b>${esc(list[i].name)}</b> ${S.tier} 계약서에 사인했다!</p><p class="muted">${S.tier==='1군'?'곧바로 시즌에 출전한다.':'전투력을 올려 1군 승격을 노리자.'}</p>`);
+}
+function joinTeam(t){
+  S.team={name:t.name, rating:t.rating}; S.teamBonus=0; S.seed=99; S.abroad=!!t.abroad;
+  S.tier = pw()>=t.rating-8 ? '1군' : '2군';
+  if(S.tier==='1군') S.wasPro=true; else S.was2=true;
+  hist(`${t.name} ${S.tier} 입단`,'key');
+}
+
+/* ================= 시즌 & 경기 ================= */
+function randomOpp(){
+  const own = S.team.name;
+  if(S.abroad){ const n=pick(WORLD.filter(x=>x!==own)); return {name:n, rating:ri(60,82)}; }
+  const t = pick(TEAMS[S.genre].filter(x=>x[0]!==own));
+  return {name:t[0], rating:t[1]+ri(-3,3)};
+}
+function setLine(g,n,win){
+  const G=GENRES[g];
+  if(g==='moba') return `<li class="${win?'w':'l'}">${n}세트 ${win?'승':'패'} — ${pick(win?G.win:G.lose)}</li>`;
+  const ot = chance(.15), lo = ot ? 12 : ri(3,11), hi = ot ? 14 : 13;
+  return `<li class="${win?'w':'l'}">${n}맵 ${pick(G.maps)} <b>${win?hi:lo} : ${win?lo:hi}</b> — ${pick(win?G.win:G.lose)}</li>`;
+}
+async function featured(opp, stage, bo, weight=1){
+  const g=S.genre, G=GENRES[g], need=Math.ceil(bo/2);
+  const base=winProb(opp);
+  let mod=0, tName='';
+  if(S.injury>0){
+    tName='부상으로 결장';
+  } else {
+    const pct=Math.round(base*100);
+    const i = await modal({title:`🏟️ ${stage}`, html:`
+      <div class="vs"><span>${esc(S.team.name)}</span><span class="mid">VS</span><span>${esc(opp.name)}</span></div>
+      <div class="prob"><i style="width:${pct}%"></i></div>
+      <p class="muted">예상 승률 <b style="color:var(--text)">${pct}%</b> · ${bo}판 ${need}선승제 · 상대 전력 ${opp.rating}</p>
+      <p>감독: "오늘 작전은 네가 정해라."</p>`, choices:G.tactics.map(t=>({label:t.label,desc:t.desc}))});
+    mod=G.tactics[i].mod(); tName=G.tactics[i].label;
+  }
+  const p=clamp(base+mod,.05,.95);
+  let w=0,l=0,n=1; const lines=[];
+  while(w<need && l<need){ const win=chance(p); win?w++:l++; lines.push(setLine(g,n++,win)); }
+  const win = w===need;
+  let pog=false;
+  if(win && S.injury<=0 && chance(clamp(.2+(pw()-60)/60,.05,.7))){ pog=true; S.pogs++; }
+  const meta=S.popMeta()[g];
+  S.pop = clamp(S.pop + (win ? (1+(pog?2:0))*weight*meta : -weight*.8));
+  S.mental = clamp(S.mental + (win?2:-3));
+  await modal({title: win?'🏆 승리!':'💀 패배', html:`
+    <p class="muted" style="text-align:center">${esc(stage)} · 작전: ${tName}</p>
+    <div class="score">${w} : ${l}</div><ul class="pbp">${lines.join('')}</ul>
+    ${pog?'<p class="pog">🌟 POG(Player of the Game) 선정!</p>':''}`, choices:[{label:'계속'}]});
+  return win;
+}
+async function regularSeason(name){
+  let w=0,l=0;
+  (await featured(randomOpp(), `${name} 정규시즌 빅매치`, 3)) ? w++ : l++;
+  for(let i=0;i<6;i++) chance(winProb(randomOpp())) ? w++ : l++;
+  S.seasons++;
+  S.seed = w>=6?1 : w>=5?2 : w>=4?ri(3,4) : w>=3?ri(5,6) : ri(7,8);
+  const txt = `${name} 정규시즌 ${w}승 ${l}패 · ${S.seed}위${S.seed<=4?' (플레이오프 진출!)':''}`;
+  log(`📊 ${txt}`,'', S.seed<=4?'good':'bad');
+  await info('📊 정규시즌 종료', `<p><b>${txt}</b></p>`);
+}
+async function playoffs(name){
+  if(S.seed>4){ log(`😢 ${name} 플레이오프 진출 실패`,'','bad'); return; }
+  if(!(await featured(randomOpp(), `${name} 플레이오프 4강`, 5, 2))){ log(`${name} 4강 탈락`,'','bad'); return; }
+  const fin={name:pick(TEAMS[S.genre].filter(x=>x[0]!==S.team.name).slice(0,3))[0], rating:ri(74,84)};
+  if(S.abroad) fin.name=pick(WORLD.filter(x=>x!==S.team.name));
+  if(!(await featured(fin, `${name} 결승전`, 5, 3))){
+    hist(`${name} 준우승`,'good'); log(`🥈 ${name} 준우승`,'','good'); return;
+  }
+  const label=`${S.age}세 ${name} (${GENRES[S.genre].game})`;
+  S.trophies.league.push(label); if(!S.champGenres.includes(S.genre)) S.champGenres.push(S.genre);
+  S.yearChamp=true; S.money+=1000; S.earned+=1000; S.pop=clamp(S.pop+12);
+  hist(`${name} 우승! 🏆`,'key'); log(`🏆 ${name} 우승!`,'','key');
+  await info('🏆 우승!!', `<p>꽃가루가 쏟아진다. <b>${esc(S.team.name)}</b>, ${name} 챔피언!</p><p class="muted">우승 상금 1,000만원 · 월드 챔피언십 진출권 획득</p>`);
+}
+async function worlds(){
+  await info('🌍 월드 챔피언십', '<p>전 세계 최강팀들이 모였다. 세계 정상을 향한 도전이 시작된다!</p>');
+  const stages=[['8강',ri(74,84)],['4강',ri(80,90)],['결승',ri(86,96)]];
+  const used=[];
+  for(const [st,r] of stages){
+    const nm=pick(WORLD.filter(x=>x!==S.team.name && !used.includes(x))); used.push(nm);
+    if(!(await featured({name:nm,rating:r}, `월드 챔피언십 ${st}`, 5, st==='결승'?5:3))){
+      hist(`월드 챔피언십 ${st} 진출`,'good'); log(`🌍 월드 챔피언십 ${st}에서 탈락`,'',''); return;
+    }
+  }
+  S.trophies.worlds.push(`${S.age}세 (${GENRES[S.genre].game})`);
+  if(!S.champGenres.includes(S.genre)) S.champGenres.push(S.genre);
+  S.money+=5000; S.earned+=5000; S.pop=clamp(S.pop+25); S.mental=clamp(S.mental+10);
+  hist('🌍 월드 챔피언 등극!!','key'); log('🌍 월드 챔피언!!','','key');
+  await info('👑 세계 정상!', `<p>당신은 이제 <b>월드 챔피언</b>이다!</p><p class="muted">상금 5,000만원 · 인기 폭발</p>`);
+}
+async function seasonStep(){
+  if(S.q===0) await regularSeason('스프링');
+  else if(S.q===1) await playoffs('스프링');
+  else if(S.q===2) await regularSeason('서머');
+  else {
+    await playoffs('서머');
+    if(S.yearChamp) await worlds();
+    // 방출 체크
+    if(pw() < teamRating()-18){
+      hist(`${S.team.name} 방출`,'bad');
+      await info('📦 방출 통보', `<p>"미안하지만 다음 시즌 계약은 없다." <b>${esc(S.team.name)}</b>에서 방출되었다.</p><p class="muted">랭크를 올려 다른 팀의 연락을 기다리자.</p>`);
+      S.team=null; S.tier=null; S.salaryMul=1; S.abroad=false; S.tryCool=S.turn+1;
+    }
+  }
+}
+
+/* ================= 이벤트 ================= */
+const EVENTS = [
+ {id:'parents', cond:()=>S.age<19&&!S.team, title:'👪 부모님 면담', text:'부모님이 진지한 얼굴로 부르셨다.<br>"너 언제까지 게임만 할 거니?"', choices:[
+   {label:'프로가 되겠다고 설득한다', desc:'멘탈·랭크·부모님 신뢰가 높을수록 성공', run:()=>{
+     const p=.2+S.mental/250+S.mmr[cg()]/6000+S.family.support*.2+(S.flags.trust||0)*.04;
+     if(chance(p)){ S.flags.parentOK=true; hist('부모님의 허락을 받다','good'); fx({mental:8,money:Math.round(300*S.family.support)}); return '부모님이 한숨을 쉬시더니 허락해주셨다! "대신 확실하게 해라."'; }
+     fx({mental:-6,edu:3}); return '설득 실패... 컴퓨터 사용 시간이 줄었다.'; }},
+   {label:'공부도 열심히 하겠다고 약속한다', run:()=>{ fx({edu:7,fatigue:6,mental:2}); return '당분간 공부와 게임을 병행하기로 했다.'; }}]},
+ {id:'pcbang', cond:()=>S.age<18&&!S.team, title:'🏆 동네 PC방 대회', text:'동네 PC방에서 상금 50만원 대회가 열린다.', choices:[
+   {label:'참가한다', run:()=>{ if(chance(clamp((pw()-20)/40,.1,.9))){ hist('PC방 대회 우승','good'); fx({pop:4,money:50,mental:4}); return '압도적인 실력으로 우승! 동네에서 유명해졌다.'; }
+     fx({money:10,skill:2}); return '아깝게 준우승. 그래도 좋은 경험이었다.'; }},
+   {label:'랭크에 집중한다', run:()=>{ fx({skill:2,fatigue:4}); return '대회 대신 랭크를 돌렸다.'; }}]},
+ {id:'friends', cond:()=>S.age<21, title:'🍜 친구들의 유혹', text:'친구들이 노래방에 가자고 한다. 오늘 연습 루틴이 남았는데...', choices:[
+   {label:'오늘은 논다!', run:()=>{ fx({mental:6,fatigue:-12}); return '오랜만에 실컷 웃었다.'; }},
+   {label:'연습하러 간다', run:()=>{ fx({skill:2,mental:-3,fatigue:5}); return '"다음에 보자." 묵묵히 연습했다.'; }}]},
+ {id:'duo', cond:()=>!S.team, title:'🤝 고수의 듀오 제안', text:'랭킹 상위권 유저가 같이 듀오를 하자고 귓속말을 보냈다.', choices:[
+   {label:'같이 한다', run:()=>{ if(chance(.75)){ fx({skill:4,macro:3,mmr:120}); return '고수에게 많이 배웠다!'; } fx({mmr:-200,mental:-6}); return '알고 보니 대리 기사였다... 계정 경고를 받았다.'; }},
+   {label:'혼자 실력으로 간다', run:()=>{ fx({mental:3}); return '정공법이 최고다.'; }}]},
+ {id:'exam', cond:()=>S.age<19, title:'📚 시험 기간', text:'다음 주가 기말고사다.', choices:[
+   {label:'벼락치기 공부', run:()=>{ fx({edu:8,fatigue:10}); return '밤새 공부했다. 성적은 그럭저럭.'; }},
+   {label:'시험 따위 무시', run:()=>{ fx({edu:-6,skill:2,mmr:60}); return '성적표가 처참하다. 대신 랭크는 올랐다.'; }}]},
+ {id:'gear', cond:()=>true, title:'🖱️ 마우스 고장', text:'중요한 시기에 마우스 휠이 고장 났다.', choices:[
+   {label:'최고급 장비를 산다 (-80만원)', disabled:()=>S.money<80, run:()=>{ fx({money:-80,mental:4,skill:1}); return '손에 착 감기는 새 장비! 컨디션이 좋다.'; }},
+   {label:'테이프 감고 버틴다', run:()=>{ fx({mental:-5}); return '손에 안 맞아 짜증이 난다.'; }}]},
+ {id:'troll', cond:()=>S.tier!=='1군', title:'😡 트롤 유저', text:'승급전에서 팀원이 대놓고 트롤을 한다.', choices:[
+   {label:'참고 캐리를 노린다', run:()=>{ if(chance(S.mental/120+.1)){ fx({mmr:80,pop:3,mental:3}); return '멘탈을 붙잡고 1:5 캐리! 하이라이트 영상이 퍼졌다.'; } fx({mmr:-50,mental:2}); return '결국 졌다. 그래도 화는 안 냈다.'; }},
+   {label:'채팅으로 맞대응', run:()=>{ fx({mental:-6,mmr:-60}); return '욕설 신고로 채팅 금지를 먹었다.'; }}]},
+ {id:'hate', cond:()=>S.pop>=20, title:'💬 악플 폭탄', text:'경기 후 커뮤니티에 내 이름이 도배됐다. 대부분 악플이다.', choices:[
+   {label:'무시하고 연습한다', run:()=>{ if(S.mental>=55){ fx({mental:2,skill:1}); return '흔들리지 않았다. 실력으로 보여주자.'; } fx({mental:-8,fatigue:8}); return '애써 무시했지만 잠이 오지 않는다.'; }},
+   {label:'SNS로 반박한다', run:()=>{ if(chance(.4)){ fx({pop:6}); return '센스 있는 반박글이 오히려 화제가 됐다!'; } fx({pop:-5,mental:-6}); return '논란이 더 커졌다...'; }},
+   {label:'SNS를 잠시 접는다', run:()=>{ fx({mental:6,pop:-2}); return '디지털 디톡스. 마음이 편해졌다.'; }}]},
+ {id:'wrist', cond:()=>S.fatigue>=50&&S.injury===0, title:'🩹 손목 통증', text:'마우스를 잡을 때마다 손목이 시큰거린다.', choices:[
+   {label:'병원에 간다 (-50만원)', disabled:()=>S.money<50, run:()=>{ fx({money:-50,fatigue:-20,health:3}); return '꾸준히 치료를 받았다.'; }},
+   {label:'파스 붙이고 참는다', run:()=>{ if(chance(.4)){ S.injury=2; hist('손목 부상','bad'); fx({phys:-4,mental:-4}); return '결국 손목 부상! 2분기 동안 정상적인 연습이 어렵다.'; } fx({fatigue:5}); return '다행히 통증이 가라앉았다.'; }}]},
+ {id:'fanmeet', cond:()=>S.pop>=40, title:'🎉 팬미팅 제안', text:'팬카페에서 오프라인 팬미팅을 열고 싶어 한다.', choices:[
+   {label:'참석한다', run:()=>{ fx({pop:6,mental:6,fatigue:8}); return '팬들의 응원에 큰 힘을 얻었다!'; }},
+   {label:'연습 때문에 거절', run:()=>{ fx({pop:-2,skill:1}); return '아쉬워하는 팬들이 많다.'; }}]},
+ {id:'sponsor', cond:()=>S.pop>=30, title:'📺 광고 모델 제의', text:()=>`게이밍 의자 브랜드에서 광고 모델 제의가 들어왔다. (${won(S.pop*15)})`, choices:[
+   {label:'수락한다', run:()=>{ const m=Math.round(S.pop*15); S.earned+=m; fx({money:m,fatigue:8,pop:3}); return '촬영은 힘들었지만 통장이 두둑해졌다.'; }},
+   {label:'게임에만 집중한다', run:()=>{ fx({mental:2,skill:1}); return '"지금은 경기력이 우선입니다."'; }}]},
+ {id:'conflict', cond:()=>S.tier==='1군', title:'⚡ 팀 내 불화', text:'오더 문제로 팀원과 언성이 높아졌다.', choices:[
+   {label:'먼저 대화를 청한다', run:()=>{ if(chance(.4+S.mental/200)){ fx({teamBonus:3,mental:3}); return '솔직한 대화 끝에 오히려 팀이 단단해졌다.'; } fx({teamBonus:-1,mental:-2}); return '대화는 했지만 앙금이 남았다.'; }},
+   {label:'내 방식이 맞다고 밀어붙인다', run:()=>{ if(chance(S.macro/150)){ fx({macro:3,teamBonus:1}); return '결국 내 오더가 맞았다. 팀원들이 인정했다.'; } fx({teamBonus:-3,mental:-4}); return '팀 분위기가 싸늘해졌다...'; }}]},
+ {id:'coach', cond:()=>!!S.team, title:'📋 코치의 혹평', text:'"요즘 플레이가 너무 안일해." 코치가 VOD를 틀어놓고 지적한다.', choices:[
+   {label:'겸허히 받아들인다', run:()=>{ fx({macro:4,mental:-3}); return '아프지만 맞는 말이었다.'; }},
+   {label:'"제 판단이 맞았어요"', run:()=>{ if(chance(S.mental/130)){ fx({mental:4}); return '코치가 고개를 끄덕였다. "그래, 네 근거도 일리가 있다."'; } fx({teamBonus:-2,mental:-2}); return '코치와 사이가 어색해졌다.'; }}]},
+ {id:'rival', once:true, cond:()=>!!S.genre&&S.age>=16, title:'🔥 라이벌 등장', text:()=>`동갑내기 천재 '${S.rival}'가 혜성처럼 나타났다. 모두가 둘을 비교한다.`, choices:[
+   {label:'반드시 이긴다!', run:()=>{ S.flags.rival=true; hist(`라이벌 '${S.rival}'와의 경쟁 시작`,'key'); fx({skill:3,fatigue:10,mental:2}); return '불타오른다. 연습량을 두 배로 늘렸다.'; }},
+   {label:'나는 내 길을 간다', run:()=>{ fx({mental:5}); return '남과 비교하지 않기로 했다.'; }}]},
+ {id:'abroad', cond:()=>S.tier==='1군'&&!S.abroad&&pw()>=62&&S.age>=19, title:'✈️ 해외 이적 제의', text:'해외 명문팀에서 거액의 오퍼가 왔다! (연봉 약 2배)', choices:[
+   {label:'해외로 간다', run:()=>{ const n=pick(WORLD); const from=S.team.name; S.team={name:n,rating:ri(72,84)}; S.abroad=true; S.salaryMul=2; S.teamBonus=0; S.seed=99; hist(`${from} → ${n} 해외 이적`,'key'); fx({pop:4,mental:-3}); return `${n} 유니폼을 입었다. 낯선 환경이지만 설렌다.`; }},
+   {label:'의리를 지킨다', run:()=>{ fx({pop:8,mental:3,teamBonus:2}); return '"원클럽맨" 팬들이 열광했다!'; }}]},
+ {id:'transfer', cond:()=>S.tier==='1군'&&!S.abroad&&S.q===3&&TEAMS[S.genre].some(t=>t[1]>S.team.rating&&t[1]<=pw()+10), title:'📝 국내 이적 시장', text:'스토브리그. 더 강한 팀에서 러브콜이 왔다.', choices:[
+   {label:'더 강한 팀으로 이적', run:()=>{ const c=TEAMS[S.genre].filter(t=>t[1]>S.team.rating&&t[1]<=pw()+10); const t=c[c.length-1]; const from=S.team.name; S.team={name:t[0],rating:t[1]}; S.teamBonus=0; S.seed=99; hist(`${from} → ${t[0]} 이적`,'key'); fx({mental:2}); return `${t[0]}로 이적했다! 우승을 노릴 수 있는 팀이다.`; }},
+   {label:'잔류한다', run:()=>{ fx({teamBonus:2,pop:3}); return '팀과의 의리를 택했다.'; }}]},
+ {id:'contract', cond:()=>S.tier==='1군'&&S.q===2, title:'💰 연봉 협상', text:'재계약 시즌. 구단이 연봉 협상 테이블을 열었다.', choices:[
+   {label:'강하게 요구한다', run:()=>{ if(pw()>=teamRating()-2){ S.salaryMul*=1.3; fx({mental:3}); return '구단이 백기를 들었다. 연봉 대폭 인상!'; } fx({teamBonus:-2,mental:-3}); return '협상이 결렬 직전까지 갔다. 구단과 사이가 틀어졌다.'; }},
+   {label:'구단 제시안을 받는다', run:()=>{ S.salaryMul*=1.1; fx({mental:2,teamBonus:1}); return '무난하게 사인했다.'; }}]},
+ {id:'burnout', cond:()=>S.mental<40, title:'🌧️ 번아웃 위기', text:'아무것도 하기 싫다. 모니터만 봐도 숨이 막힌다.', choices:[
+   {label:'심리 상담을 받는다 (-100만원)', disabled:()=>S.money<100, run:()=>{ fx({money:-100,mental:15,fatigue:-15}); return '이야기를 털어놓으니 한결 가벼워졌다.'; }},
+   {label:'연습으로 이겨낸다', run:()=>{ if(chance(S.mental/80)){ fx({skill:3,mental:5}); return '이겨냈다! 한층 단단해졌다.'; } S.slump=2; fx({fatigue:10}); return '오히려 슬럼프에 빠져버렸다...'; }}]},
+ {id:'streamfail', cond:()=>S.pop>=15, title:'🎙️ 방송 사고', text:'방송 중 무심코 한 말이 클립으로 퍼지고 있다.', choices:[
+   {label:'바로 사과한다', run:()=>{ fx({pop:-3,mental:-2}); return '빠른 사과로 논란이 금방 가라앉았다.'; }},
+   {label:'"그런 뜻 아니었는데요?"', run:()=>{ if(chance(.5)){ fx({pop:4}); return '해명이 오히려 밈이 됐다. 전화위복!'; } fx({pop:-8,mental:-6}); return '불난 집에 기름을 부었다...'; }}]},
+ {id:'senior', cond:()=>!!S.genre, title:'🧓 은퇴 선배의 조언', text:'전설적인 은퇴 선수와 밥을 먹게 되었다.', choices:[
+   {label:'경청한다', run:()=>{ fx({macro:4,mental:4}); return '"결국 멘탈이야." 선배의 말이 오래 남았다.'; }},
+   {label:'사인을 받는다', run:()=>{ fx({mental:6}); return '우상에게 사인을 받았다! 의욕이 샘솟는다.'; }}]},
+ {id:'love', once:true, cond:()=>S.age>=18, title:'💕 썸', text:'요즘 자꾸 연락하게 되는 사람이 생겼다.', choices:[
+   {label:'고백한다', run:()=>{ if(chance(.6)){ S.flags.love=true; hist('연애 시작','good'); if(S.pop>=30){ fx({mental:10,pop:chance(.5)?4:-4}); return '사귀게 됐다! 열애설 기사까지 났다.'; } fx({mental:10}); return '사귀게 됐다! 세상이 핑크빛이다.'; } fx({mental:-8}); return '"우리 그냥 친구로 지내자..."'; }},
+   {label:'지금은 게임만 본다', run:()=>{ fx({skill:2,mental:-3}); return '마음을 접고 키보드를 잡았다.'; }}]},
+ {id:'caster', once:true, cond:()=>S.age>=21&&S.pop>=30&&S.macro>=55, title:'🎤 해설 게스트 제의', text:'방송사에서 특별 해설 게스트로 와달라고 한다.', choices:[
+   {label:'출연한다', run:()=>{ S.flags.caster=true; hist('해설 게스트 출연','good'); fx({pop:5,fatigue:5}); return '"말을 정말 잘하네?" 해설 재능이 있다는 평을 들었다.'; }},
+   {label:'시즌 중이라 거절', run:()=>{ fx({mental:1}); return '선수 생활에 집중하기로 했다.'; }}]},
+ {id:'coin', cond:()=>S.money>=2000, title:'📈 지인의 투자 권유', text:'"이 코인 무조건 10배 간다니까? 딱 천만 원만 넣어봐."', choices:[
+   {label:'1,000만원 넣는다', run:()=>{ if(chance(.25)){ fx({money:3000}); return '진짜 올랐다! 4배 수익!'; } fx({money:-1000,mental:-6}); return '상장 폐지... 돈이 증발했다.'; }},
+   {label:'거절한다', run:()=>{ fx({mental:1}); return '"난 게임으로 벌게."'; }}]},
+ {id:'allnight', cond:()=>!!S.team, title:'🌙 밤샘 스크림', text:'팀원이 오늘 밤새 스크림을 돌리자고 한다.', choices:[
+   {label:'콜!', run:()=>{ fx({skill:4,fatigue:20,teamBonus:1}); return '해가 뜰 때까지 달렸다. 피곤하지만 실력이 늘었다.'; }},
+   {label:'컨디션 관리가 우선', run:()=>{ fx({fatigue:-5}); return '일찍 잤다. 팀원이 살짝 서운해한다.'; }}]},
+ {id:'collab', cond:()=>S.pop>=25, title:'📡 인기 스트리머 합방', text:'구독자 100만 스트리머가 합방을 제안했다.', choices:[
+   {label:'합방한다', run:()=>{ const m=50; S.earned+=m; fx({pop:7,money:m,fatigue:6}); return '케미가 터졌다! 클립 조회수 폭발.'; }},
+   {label:'거절한다', run:()=>{ return '정중히 거절했다.'; }}]},
+ {id:'national', once:true, cond:()=>S.tier==='1군'&&pw()>=64, title:'🇰🇷 국가대표 발탁!', text:'아시안게임 e스포츠 국가대표로 선발되었다!', choices:[
+   {label:'태극마크를 단다', run:()=>{ if(chance(clamp((pw()-50)/25,.2,.9))){ S.flags.gold=true; hist('아시안게임 금메달 🥇','key'); fx({pop:20,mental:10,fatigue:15}); return '결승 승리! 금메달을 목에 걸었다!'; } hist('아시안게임 은메달 🥈','good'); fx({pop:8,fatigue:15}); return '아쉽게 은메달. 그래도 자랑스럽다.'; }},
+   {label:'컨디션 문제로 고사한다', run:()=>{ fx({pop:-10}); return '여론이 싸늘하다...'; }}]},
+ {id:'switch', once:true, cond:()=>!!S.genre&&!S.switched&&S.age>=17&&S.age<=24&&S.apt[other(S.genre)]>=1.05&&S.played[other(S.genre)]>=3, title:'📞 다른 장르의 러브콜', text:()=>{ const o=other(S.genre); return `${GENRES[o].game} 팀 <b>${TEAMS[o][4][0]}</b>에서 연락이 왔다.<br>"당신의 ${GENRES[o].name} 재능이 아깝습니다. 우리 팀으로 전향하지 않겠어요?"<br><small class="muted">전향하면 인기가 절반이 되고 2군부터 시작한다.</small>`; }, choices:[
+   {label:'전향한다!', run:()=>{ const o=other(S.genre); doSwitch(o); joinTeam({name:TEAMS[o][4][0], rating:TEAMS[o][4][1]}); return `${GENRES[o].game}로 전향했다. 새로운 도전의 시작!`; }},
+   {label:'지금 장르에 집중한다', run:()=>{ fx({mental:2}); return '한 우물만 파기로 했다.'; }}]},
+ {id:'rookie', cond:()=>S.tier==='2군', title:'⚔️ 2군 주전 경쟁', text:'같은 포지션 연습생이 무섭게 치고 올라온다.', choices:[
+   {label:'연습량을 늘린다', run:()=>{ fx({skill:4,fatigue:12}); return '밀릴 수 없다. 이를 악물었다.'; }},
+   {label:'내 페이스를 유지한다', run:()=>{ fx({mental:3}); return '조급해하지 않기로 했다.'; }}]},
+ {id:'meme', cond:()=>!!S.team&&S.pop>=10, title:'😂 밈 탄생', text:'경기 중 내 표정이 짤로 돌아다닌다.', choices:[
+   {label:'같이 즐긴다', run:()=>{ fx({pop:5}); return '셀프 패러디까지! 팬들이 좋아한다.'; }},
+   {label:'좀 부끄럽다', run:()=>{ fx({pop:2,mental:-1}); return '이불킥...'; }}]},
+ {id:'donate', cond:()=>S.money>=1500, title:'🎗️ 기부 제안', text:'소아암 환우를 위한 자선 대회에 기부하자는 제안이 왔다.', choices:[
+   {label:'500만원 기부', run:()=>{ fx({money:-500,pop:6,mental:5}); return '"선행 프로게이머" 기사가 났다.'; }},
+   {label:'다음에 하겠다', run:()=>{ return '마음만 보탰다.'; }}]},
+ {id:'bday', cond:()=>S.pop>=35, title:'🎂 생일', text:'팬들이 지하철역에 생일 광고를 걸어줬다!', choices:[
+   {label:'감동이다...', run:()=>{ fx({mental:8,pop:2}); return '인증샷을 올렸다. 더 열심히 해야겠다.'; }}]},
+];
+async function randomEvent(){
+  const pool = EVENTS.filter(e=>(!e.once||!S.seen[e.id]) && (S.cool[e.id]||0)<=S.turn && e.cond());
+  if(!pool.length) return;
+  const e = pick(pool); S.seen[e.id]=true; S.cool[e.id]=S.turn+10;
+  const text = typeof e.text==='function' ? e.text() : e.text;
+  const ch = e.choices.map(c=>({label:c.label, desc:c.desc, disabled: typeof c.disabled==='function' ? c.disabled() : false}));
+  if(ch.every(c=>c.disabled)) ch[ch.length-1].disabled=false;
+  const i = await modal({title:e.title, html:`<p>${text}</p>`, choices:ch});
+  const b=snap(); const r=e.choices[i].run(); const d=diffHtml(b,snap());
+  log(`${e.title} — ${r}`, d);
+  await modal({title:e.title, html:`<p>${r}</p>${d}`, choices:[{label:'확인'}]});
+}
+
+/* ================= 장르 전향 / 은퇴 ================= */
+function doSwitch(g){
+  const from=S.genre;
+  S.genre=g; S.switched=true; S.pop=S.pop*.5;
+  S.team=null; S.tier=null; S.teamBonus=0; S.salaryMul=1; S.abroad=false; S.seed=99; S.tryCool=0;
+  hist(`${GENRES[from].game} → ${GENRES[g].game} 장르 전향`,'key');
+  log(`🔄 ${GENRES[g].game}로 장르 전향!`,'','key');
+}
+async function askSwitch(){
+  if(busy) return;
+  const o=other(S.genre);
+  const i = await modal({title:'🔄 장르 전향', html:`<p><b>${GENRES[o].game}</b>(${GENRES[o].name})로 전향할까요?</p>
+    <ul class="pbp"><li>현재 소속팀을 떠나고, 인기가 절반이 된다</li><li>${GENRES[o].game} 랭크(${tierOf(S.mmr[o])})로 다시 입단 테스트를 받아야 한다</li><li>두 장르에서 우승하면 전설의 칭호를 얻는다</li></ul>
+    <p class="muted">${GENRES[o].game} 재능: <span class="stars">${S.played[o]>=3?stars(o):'???'}</span> · 예상 전투력 ${Math.round(power(o))}</p>`,
+    choices:[{label:'전향한다'},{label:'취소'}]});
+  if(i===0){ doSwitch(o); render(); save(); }
+}
+async function askRetire(){
+  if(busy) return;
+  const i = await modal({title:'🏁 은퇴', html:'<p>정말 지금 선수 생활을 마무리할까요?</p>', choices:[{label:'은퇴한다'},{label:'아직 아니다'}]});
+  if(i===0){ busy=true; await retire(); busy=false; }
+}
+async function retire(){
+  const careers = [
+    {key:'coach', label:'🎓 코치', ok:S.wasPro&&S.macro>=65, req:'1군 경력 + 운영 65 이상'},
+    {key:'caster', label:'🎤 해설위원', ok:(S.pop>=40&&S.macro>=55)||!!S.flags.caster, req:'인기 40 + 운영 55, 또는 해설 경험'},
+    {key:'streamer', label:'📺 스트리머', ok:S.pop>=20, req:'인기 20 이상'},
+    {key:'biz', label:'💼 사업가', ok:S.money>=5000, req:'자산 5,000만원 이상'},
+    {key:'job', label:'🏢 일반 취업', ok:true, req:'학업 수준에 따라 결과가 달라짐'},
+  ];
+  const i = await modal({title:'🌅 두 번째 인생', html:'<p>선수로서의 인생은 끝났다. 이제 무엇을 할까?</p>',
+    choices:careers.map(c=>({label:c.label, desc:c.req, disabled:!c.ok}))});
+  S.career = careers[i].key;
+  S.ended = true;
+  showEnding();
+}
+
+/* ================= 엔딩 ================= */
+function computeTitle(){
+  const W=S.trophies.worlds.length, L=S.trophies.league.length;
+  if(W>=3) return '불멸의 황제';
+  if(S.champGenres.length>=2) return '장르 파괴자';
+  if(W>=1) return '월드 챔피언';
+  if(L>=3) return '리그의 지배자';
+  if(L>=1) return '리그 챔피언';
+  if(S.flags.gold) return '금메달리스트';
+  if(S.seasons>=8) return '꾸준한 베테랑';
+  if(S.wasPro) return '1군 프로게이머';
+  if(S.was2) return '만년 2군';
+  if(S.peakMmr>=2850) return '랭크의 신 (프로 데뷔 실패)';
+  return '꿈꾸던 게이머';
+}
+function careerText(){
+  const c=S.career;
+  if(c==='coach') return S.macro>=85 ? ['명장 감독','선수 시절의 운영 능력으로 명문팀 감독이 되어 우승을 휩쓸었다.'] : ['코치','후배들을 가르치며 e스포츠계에 남았다.'];
+  if(c==='caster') return S.pop>=70 ? ['국민 해설','"이 목소리 없으면 결승이 아니다." 레전드 해설위원이 되었다.'] : ['해설위원','날카로운 분석으로 사랑받는 해설위원이 되었다.'];
+  if(c==='streamer') return S.pop>=70 ? ['은퇴 후 대박 스트리머','구독자 수백만의 탑 스트리머! 선수 시절보다 더 벌었다.'] : S.pop>=40 ? ['인기 스트리머','꾸준한 시청자층과 함께 방송을 이어갔다.'] : ['소소한 스트리머','시청자는 적지만 즐겁게 방송 중이다.'];
+  if(c==='biz') return S.money>=20000 ? ['e스포츠 구단주','모은 자금으로 직접 구단을 창단했다!'] : ['PC방 사장님','동네 최고의 PC방을 차렸다. 손님들이 사인을 받으러 온다.'];
+  return S.edu>=65 ? ['대기업 직장인','늦게 시작한 공부로 번듯한 회사에 입사했다.'] : S.edu>=40 ? ['평범한 직장인','평범한 회사원이 되었다. 주말엔 여전히 게임을 한다.'] : ['인생 2회차 준비 중','이것저것 아르바이트를 하며 새 길을 찾고 있다.'];
+}
+function computeScore(){
+  return Math.round(S.trophies.worlds.length*1500 + S.trophies.league.length*400 + (S.flags.gold?300:0)
+    + S.seasons*60 + S.pogs*20 + S.peakPop*8 + S.earned/100 + S.peakMmr/10);
+}
+function showEnding(){
+  const title=computeTitle(), [sub, subText]=careerText(), score=computeScore();
+  const best=storeGet('pg_best');
+  const isBest=!best || score>best.score;
+  if(isBest) storeSet('pg_best',{score,title,name:S.name});
+  const genres = [S.switched?'MOBA + FPS':S.genre?GENRES[S.genre].game:'정하지 못함'][0];
+  const trophies = [
+    ...S.trophies.worlds.map(t=>`<div class="trophy">👑 월드 챔피언 — ${t}</div>`),
+    ...S.trophies.league.map(t=>`<div class="trophy">🏆 ${t}</div>`),
+    S.flags.gold?'<div class="trophy">🥇 아시안게임 금메달</div>':''
+  ].join('') || '<div class="muted">우승 기록 없음</div>';
+  const tl = S.history.slice(-14).map(h=>`<div class="${h.type}">${h.age}세 · ${esc(h.text)}</div>`).join('') || '<div>조용한 인생이었다.</div>';
+  $('#ending').innerHTML = `<div class="endcard">
+    <div class="muted">${esc(S.name)}의 인생 · 14세 ~ ${S.age}세</div>
+    <div class="big">${esc(S.name)}</div>
+    <div class="title-badge">${title}</div> <span class="pill">${sub}</span>
+    <p>${subText}</p>
+    <div class="gacha">
+      <div class="gcell"><div class="l">주 종목</div><div class="v" style="font-size:15px">${genres}</div></div>
+      <div class="gcell"><div class="l">최고 티어</div><div class="v">${tierOf(S.peakMmr)}</div></div>
+      <div class="gcell"><div class="l">1군 시즌 / POG</div><div class="v">${S.seasons} / ${S.pogs}</div></div>
+      <div class="gcell"><div class="l">총 수입</div><div class="v">${won(S.earned)}</div></div>
+    </div>
+    <h3 style="margin:10px 0 4px">🏆 우승 기록</h3>${trophies}
+    <h3 style="margin:14px 0 0">📅 인생 연표</h3><div class="tl">${tl}</div>
+    <p style="margin-top:14px"><b>인생 점수: ${score.toLocaleString()}점</b> ${isBest?'<span class="pill hot">🎉 최고 기록!</span>':`<span class="muted">(최고 ${best.score.toLocaleString()}점 · ${esc(best.title)})</span>`}</p>
+    <div class="btnrow"><button class="primary" onclick="restart()">🔁 다시 태어나기</button><button class="ghost" id="copyBtn" onclick="copyResult()">📋 결과 복사</button></div>
+  </div>`;
+  S.shareText = `🎮 프로게이머 키우기\n${S.name} (14~${S.age}세)\n칭호: ${title} / 은퇴 후: ${sub}\n월드 우승 ${S.trophies.worlds.length}회 · 리그 우승 ${S.trophies.league.length}회 · 최고 ${tierOf(S.peakMmr)}\n인생 점수 ${score.toLocaleString()}점`;
+  storeSet('pg_save', null);
+  $('#game').classList.add('hide'); $('#ending').classList.remove('hide'); $('#status').innerHTML='';
+  window.scrollTo(0,0);
+}
+function copyResult(){
+  const done=()=>{ $('#copyBtn').textContent='✅ 복사됨!'; };
+  if(navigator.clipboard) navigator.clipboard.writeText(S.shareText).then(done,()=>prompt('복사하세요',S.shareText));
+  else prompt('복사하세요',S.shareText);
+}
+function restart(){ S=null; rerolls=3; roll=rollBirth(); $('#ending').classList.add('hide'); showStart(); }
+
+/* ================= 시작 화면 ================= */
+function showStart(){
+  const r=roll, t=r.talent;
+  const g = k => `<span class="grade-${grade(t[k])}">${grade(t[k])}</span>`;
+  const saved = storeGet('pg_save');
+  $('#start').classList.remove('hide');
+  $('#start').innerHTML = `
+    <div class="big">🍼 출생 가챠</div>
+    <p class="muted">게임을 사랑하는 14살로 태어났다. 어떤 패를 들고 시작할까?</p>
+    <div class="gacha">
+      <div class="gcell" style="grid-column:1/-1"><div class="l">가정 환경</div><div class="v">${r.family.emoji} ${r.family.name} <small class="muted" style="font-size:12px;font-weight:400">· ${r.family.desc} · 시작 자금 ${won(r.family.money)}</small></div></div>
+      <div class="gcell"><div class="l">피지컬 재능</div><div class="v">${g('phys')} <small class="muted">(${r.base.phys})</small></div></div>
+      <div class="gcell"><div class="l">운영 재능</div><div class="v">${g('macro')} <small class="muted">(${r.base.macro})</small></div></div>
+      <div class="gcell"><div class="l">멘탈 재능</div><div class="v">${g('mental')} <small class="muted">(${clamp(r.base.mental)})</small></div></div>
+      <div class="gcell"><div class="l">장르 적성</div><div class="v">??? <small class="muted" style="font-size:12px">플레이하며 발견</small></div></div>
+    </div>
+    <label class="muted" style="font-size:13px">닉네임</label>
+    <input type="text" id="nick" maxlength="12" placeholder="예: 페이크" value="">
+    <div class="btnrow">
+      <button class="primary" onclick="startGame()">🎮 이 인생으로 시작</button>
+      <button class="ghost" onclick="reroll()" ${rerolls<=0?'disabled style="opacity:.4"':''}>🎲 다시 뽑기 (${rerolls})</button>
+      ${saved&&!saved.ended?`<button class="ghost" onclick="loadGame()">▶ 이어하기 (${esc(saved.name)}, ${saved.age}세)</button>`:''}
+    </div>
+    <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA와 FPS 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!</p>`;
+}
+function reroll(){ if(rerolls<=0) return; rerolls--; roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; }
+function startGame(){
+  const name = ($('#nick').value.trim() || pick(['새싹','손가락천재','키보드워리어','에임봇','갓겜러'])).slice(0,12);
+  S = newLife(roll, name); attachMeta();
+  hist(`${roll.family.name}에서 태어난 게이머 ${name}, 꿈을 꾸기 시작하다`,'key');
+  log(`🍼 ${roll.family.emoji} ${roll.family.name} 출신 ${esc(name)}의 게이머 인생이 시작됐다!`,'','key');
+  $('#start').classList.add('hide'); $('#game').classList.remove('hide');
+  render(); save();
+}
+function attachMeta(){ if(!S.meta) S.meta={moba:1.1,fps:1.0}; S.popMeta=()=>S.meta; }
+function save(){ if(S && !S.ended){ const c={...S}; delete c.popMeta; storeSet('pg_save', c); } }
+function loadGame(){ const s=storeGet('pg_save'); if(!s) return; S=s; attachMeta(); $('#start').classList.add('hide'); $('#game').classList.remove('hide'); render(); }
+
+/* ================= 렌더 ================= */
+function bar(label, v, cls=''){ return `<div class="stat"><div class="row"><span>${label}</span><b>${Math.round(v)}</b></div><div class="bar ${cls}"><i style="width:${clamp(v)}%"></i></div></div>`; }
+function quarterName(){
+  if(S.tier==='1군') return ['스프링 정규시즌','스프링 플레이오프','서머 정규시즌','서머 플레이오프'][S.q];
+  return ['봄','여름','가을','겨울'][S.q];
+}
+function render(){
+  if(!S) return;
+  const g=cg();
+  // 상단 상태
+  const st=[`<span class="pill">${S.age}세 · ${S.q+1}분기 (${quarterName()})</span>`];
+  st.push(S.team ? `<span class="pill hot">${esc(S.team.name)} ${S.tier}</span>` : `<span class="pill">${S.genre?'무소속':'아마추어'}</span>`);
+  if(S.injury>0) st.push(`<span class="pill bad">🩹 부상 ${S.injury}</span>`);
+  if(S.slump>0) st.push(`<span class="pill warn">🌧️ 슬럼프 ${S.slump}</span>`);
+  if(S.fatigue>70) st.push(`<span class="pill warn">😵 과로</span>`);
+  $('#status').innerHTML=st.join('');
+  // 스탯
+  const gb = ['moba','fps'].map(k=>`<div class="genrebox ${S.genre===k?'main':''}">
+    <div class="t"><span>${GENRES[k].icon} ${GENRES[k].game}</span><span class="stars">${S.played[k]>=3?stars(k):'???'}</span></div>
+    <div class="muted">${tierOf(S.mmr[k])} ${S.mmr[k]}점 · 숙련도 ${Math.round(S.skill[k])} · 인기 ${S.meta[k].toFixed(2)}x</div></div>`).join('');
+  $('#stats').innerHTML = `
+    <h3>${esc(S.name)} <span class="muted">· ${S.family.emoji} ${S.family.name}</span></h3>
+    <div class="power">${Math.round(pw())}<small>전투력 (${GENRES[g].name})</small></div>
+    ${S.team?`<div class="muted" style="font-size:12.5px;margin:4px 0 10px">팀 전력 ${Math.round(teamRating())} · 시즌 출전 ${S.seasons}회</div>`:'<div style="height:10px"></div>'}
+    <div class="bars">${bar('🖐️ 피지컬',S.phys)}${bar('🧠 운영',S.macro)}${bar('💎 멘탈',S.mental)}${bar('💪 체력',S.health)}${bar('⭐ 인기',S.pop)}${bar('📚 학업',S.edu)}${bar('😵 피로',S.fatigue,'fat')}</div>
+    <div class="kv"><span>💰 자산</span><b>${won(S.money)}</b></div>
+    <div class="kv"><span>🏆 우승</span><b>월드 ${S.trophies.worlds.length} · 리그 ${S.trophies.league.length}</b></div>
+    <div class="genres">${gb}</div>`;
+  // 다음 할 일 안내
+  let hint='';
+  if(!S.genre) hint = S.age>=15 ? '두 게임을 해보며 재능을 찾아보자. 16살이 되면 주력 장르를 정한다.' : '두 게임을 모두 해보며 재능을 찾아보자.';
+  else if(!S.team) hint = `${GENRES[S.genre].game} 랭크 <b>${tierOf(TRYOUT_MMR)}</b> 달성 시 프로팀 스카우트! (현재 ${tierOf(S.mmr[S.genre])} ${S.mmr[S.genre]}점)`;
+  else if(S.tier==='2군') hint = `1군 승격 조건: 전투력 <b>${Math.round(teamRating()-8)}</b> 이상`;
+  else hint = `이번 분기: <b>${quarterName()}</b>`;
+  $('#next').innerHTML = `<div class="info">${hint}</div><div class="info">무엇을 할까?</div>`;
+  // 행동 버튼
+  const acts=getActions();
+  $('#actions').innerHTML='';
+  acts.forEach(a=>{
+    const b=document.createElement('button'); b.className='act'; b.disabled=busy||!!a.dis;
+    b.innerHTML=`<span class="i">${a.icon}</span><b>${a.label}</b><small>${a.desc}</small>`;
+    b.onclick=()=>doAction(a); $('#actions').appendChild(b);
+  });
+  // 보조 버튼
+  const sub=[];
+  if(!S.genre && S.age>=15) sub.push(`<button class="sbtn" onclick="chooseGenreBtn()">🎯 주력 장르 정하기</button>`);
+  if(S.genre && S.age>=17) sub.push(`<button class="sbtn" onclick="askSwitch()">🔄 장르 전향</button>`);
+  if((S.team&&S.age>=22)||(!S.team&&S.age>=19)) sub.push(`<button class="sbtn" onclick="askRetire()">🏁 은퇴하기</button>`);
+  sub.push(`<button class="sbtn" onclick="if(confirm('처음부터 다시 시작할까요?')){storeSet('pg_save',null);restart();}">↺ 처음부터</button>`);
+  $('#subactions').innerHTML=sub.join('');
+  // 로그
+  $('#log').innerHTML = S.log.map(e=>`<div class="entry ${e.type}"><div class="when">${e.when}</div>${e.text}${e.chips}</div>`).join('');
+}
+async function chooseGenreBtn(){ if(busy) return; busy=true; await chooseGenre(false); busy=false; render(); save(); }
+
+/* ================= 시작 ================= */
+roll = rollBirth();
+showStart();
+</script>
+</body>
+</html>
