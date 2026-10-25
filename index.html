@@ -123,6 +123,14 @@ input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line
 .tl div::before{content:"";position:absolute;left:-17px;top:7px;width:8px;height:8px;border-radius:50%;background:var(--line)}
 .tl div.good::before{background:var(--good)} .tl div.bad::before{background:var(--bad)} .tl div.key::before{background:var(--gold)}
 .hide{display:none!important}
+.act.sp{border-color:var(--gold);background:linear-gradient(135deg,#2a2412,var(--panel2))}
+.act.sp b{color:var(--gold)}
+.rank{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.rank th{color:var(--muted);font-weight:500;text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}
+.rank td{padding:6px;border-bottom:1px dashed var(--line);vertical-align:top}
+.rank td.n{width:34px;text-align:center;font-weight:700}
+.rank td.s{text-align:right;font-weight:700;white-space:nowrap}
+.rank small{color:var(--muted);display:block}
 .about{max-width:760px;margin:40px auto 10px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
 .about h2{font-size:15px;color:var(--text);margin:0 0 6px}
 .about p{margin:6px 0}
@@ -305,7 +313,7 @@ function newLife(r, name){
     injury:0, slump:0, yearChamp:false,
     trophies:{league:[],worlds:[]}, champGenres:[], seasons:0, pogs:0, earned:0,
     peakPop:0, peakMmr:700, wasPro:false, was2:false, switched:false, tryCool:0,
-    rival:pick(RIVALS), flags:{}, seen:{}, cool:{}, history:[], log:[], ended:false
+    rival:pick(RIVALS), special:5, flags:{}, seen:{}, cool:{}, history:[], log:[], ended:false
   };
 }
 
@@ -426,6 +434,36 @@ function getActions(){
     grow('edu',.1); tire(6); S.flags.trust=(S.flags.trust||0)+1;
     return '학교 수업에 집중했다. 부모님이 흐뭇해하신다.'; }});
   return A;
+}
+const SPECIAL_MAX = 5;
+const SPECIALS = [
+  {icon:'🌏', label:'해외 부트캠프', desc:'숙련도 +12 · 운영 +5 · 피로 +25 · 300만원', ok:()=>S.money>=300&&S.injury<=0,
+   run:()=>{ fx({skill:12,macro:5,fatigue:25,money:-300}); return '해외 명문팀 연습실에서 지옥의 부트캠프를 버텨냈다!'; }},
+  {icon:'🏋️', label:'피지컬 집중 트레이닝', desc:'피지컬 +10 · 체력 +8 · 피로 +15', ok:()=>S.injury<=0,
+   run:()=>{ fx({phys:10,health:8,fatigue:15}); return '반응속도 전문 트레이너와 손끝 감각을 극한까지 끌어올렸다.'; }},
+  {icon:'🧘', label:'멘탈 코칭', desc:'멘탈 +15 · 피로 -30 · 슬럼프 즉시 회복', ok:()=>true,
+   run:()=>{ S.slump=0; fx({mental:15,fatigue:-30}); return '스포츠 심리 전문가와 상담했다. 마음이 단단해졌다.'; }},
+  {icon:'🎓', label:'레전드 1:1 과외', desc:'숙련도 +8 · 운영 +8 · 멘탈 +5 · 200만원', ok:()=>S.money>=200,
+   run:()=>{ fx({skill:8,macro:8,mental:5,money:-200}); return '은퇴한 레전드 선수에게 1:1로 노하우를 전수받았다.'; }},
+  {icon:'🔥', label:'재능 각성 (인생 1회)', desc:'지금 장르의 재능이 영구적으로 오른다 · 피로 +20', ok:()=>!S.flags.awakened,
+   run:()=>{ const g=cg(); S.apt[g]=Math.min(1.35,S.apt[g]+.08); S.played[g]=Math.max(S.played[g],3); S.flags.awakened=true; fx({fatigue:20});
+     return `${GENRES[g].game} 재능이 각성했다! <span class="stars">${stars(g)}</span>`; }},
+];
+async function doSpecial(){
+  if(busy || S.ended || S.special<=0) return;
+  busy=true; render();
+  const i = await modal({title:`⭐ 특수훈련 (남은 횟수 ${S.special}/${SPECIAL_MAX})`,
+    html:'<p>인생에 단 5번! 이번 분기를 특수훈련에 쏟는다.</p><p class="muted">한 번 쓰면 되돌릴 수 없어요. 결정적인 순간을 위해 아껴두는 것도 전략이에요.</p>',
+    choices:[...SPECIALS.map(sp=>({label:`${sp.icon} ${sp.label}`, desc:sp.desc, disabled:!sp.ok()})), {label:'취소'}]});
+  if(i>=SPECIALS.length){ busy=false; render(); return; }
+  const sp=SPECIALS[i]; S.special--;
+  const b=snap(); const msg=sp.run();
+  hist(`특수훈련: ${sp.label}`,'good');
+  log(`⭐ ${msg}`, diffHtml(b,snap()), 'key');
+  render();
+  await endOfTurn();
+  busy=false;
+  if(!S.ended){ render(); save(); }
 }
 async function doAction(a){
   if(busy || S.ended) return;
@@ -830,6 +868,10 @@ function showEnding(){
   const isBest=!best || score>best.score;
   if(isBest) storeSet('pg_best',{score,title,name:S.name});
   const genres = S.careerGenres.length ? S.careerGenres.map(g=>GENRES[g].game).join(' → ') : '정하지 못함';
+  const d=new Date(), date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  S.rankRec = {name:S.name, score, title, career:sub, genres:S.careerGenres.map(g=>GENRES[g].name).join(' → ')||'-',
+    worlds:S.trophies.worlds.length, leagues:S.trophies.league.length, age:S.age, date, v:1};
+  saveLocalRecord(S.rankRec);
   const trophies = [
     ...S.trophies.worlds.map(t=>`<div class="trophy">👑 월드 챔피언 — ${t}</div>`),
     ...S.trophies.league.map(t=>`<div class="trophy">🏆 ${t}</div>`),
@@ -850,7 +892,10 @@ function showEnding(){
     <h3 style="margin:10px 0 4px">🏆 우승 기록</h3>${trophies}
     <h3 style="margin:14px 0 0">📅 인생 연표</h3><div class="tl">${tl}</div>
     <p style="margin-top:14px"><b>인생 점수: ${score.toLocaleString()}점</b> ${isBest?'<span class="pill hot">🎉 최고 기록!</span>':`<span class="muted">(최고 ${best.score.toLocaleString()}점 · ${esc(best.title)})</span>`}</p>
-    <div class="btnrow"><button class="primary" onclick="restart()">🔁 다시 태어나기</button><button class="ghost" id="copyBtn" onclick="copyResult()">📋 결과 복사</button></div>
+    <div class="btnrow"><button class="primary" onclick="restart()">🔁 다시 태어나기</button>
+      ${rankOn()?'<button class="ghost" id="rankBtn" onclick="submitRank()">🌐 랭킹 등록</button>':''}
+      <button class="ghost" onclick="showRanking()">🏆 랭킹 보기</button>
+      <button class="ghost" id="copyBtn" onclick="copyResult()">📋 결과 복사</button></div>
   </div>`;
   S.shareText = `🎮 프로게이머 키우기\n${S.name} (14~${S.age}세)\n칭호: ${title} / 은퇴 후: ${sub}\n월드 우승 ${S.trophies.worlds.length}회 · 리그 우승 ${S.trophies.league.length}회 · 최고 ${tierOf(S.peakMmr)}\n인생 점수 ${score.toLocaleString()}점`;
   storeSet('pg_save', null);
@@ -863,6 +908,69 @@ function copyResult(){
   else prompt('복사하세요',S.shareText);
 }
 function restart(){ S=null; rerolls=3; roll=rollBirth(); $('#ending').classList.add('hide'); showStart(); }
+
+/* ================= 랭킹 ================= */
+// Firebase 프로젝트를 만든 뒤 projectId와 apiKey를 넣으면 온라인 랭킹이 켜진다.
+const RANK = { projectId:'', apiKey:'' };
+const rankOn = () => !!(RANK.projectId && RANK.apiKey);
+const fsBase = () => `https://firestore.googleapis.com/v1/projects/${RANK.projectId}/databases/(default)/documents`;
+async function fetchTop(){
+  const r = await fetch(`${fsBase()}:runQuery?key=${RANK.apiKey}`, {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({structuredQuery:{from:[{collectionId:'scores'}], orderBy:[{field:{fieldPath:'score'},direction:'DESCENDING'}], limit:50}})});
+  if(!r.ok) throw new Error('rank '+r.status);
+  const j = await r.json();
+  return j.filter(x=>x.document).map(x=>{
+    const f=x.document.fields||{};
+    const v=k=>!f[k]?'':('stringValue' in f[k] ? f[k].stringValue : Number(f[k].integerValue));
+    return {name:v('name'), score:v('score'), title:v('title'), career:v('career'), genres:v('genres'), date:v('date')};
+  });
+}
+async function submitScore(rec){
+  const fields={};
+  for(const [k,v] of Object.entries(rec)) fields[k] = typeof v==='number' ? {integerValue:String(Math.round(v))} : {stringValue:String(v)};
+  const r = await fetch(`${fsBase()}/scores?key=${RANK.apiKey}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({fields})});
+  if(!r.ok) throw new Error('submit '+r.status);
+}
+function saveLocalRecord(rec){
+  const list = (storeGet('pg_records')||[]).concat([rec]).sort((a,b)=>b.score-a.score).slice(0,10);
+  storeSet('pg_records', list);
+}
+function rankTable(list){
+  const medal = i => ['🥇','🥈','🥉'][i] || (i+1);
+  return `<table class="rank"><tr><th>#</th><th>선수</th><th style="text-align:right">점수</th></tr>${list.map((r,i)=>`
+    <tr><td class="n">${medal(i)}</td><td><b>${esc(r.name)}</b> · ${esc(r.title)}<small>${esc(r.genres||'')}${r.career?' · 은퇴 후 '+esc(r.career):''}${r.date?' · '+esc(r.date):''}</small></td>
+    <td class="s">${Number(r.score).toLocaleString()}</td></tr>`).join('')}</table>`;
+}
+async function showRanking(tab){
+  tab = tab || (rankOn() ? 'online' : 'local');
+  $('#mTitle').textContent='불러오는 중…'; $('#mBody').innerHTML=''; $('#mChoices').innerHTML=''; $('#modal').classList.add('show');
+  let html;
+  if(tab==='online'){
+    if(!rankOn()) html='<p class="muted">온라인 랭킹은 준비 중이에요. 그동안 내 기록으로 도전해 보세요!</p>';
+    else {
+      try{ const list=await fetchTop(); html = list.length ? rankTable(list) : '<p class="muted">아직 등록된 기록이 없어요. 첫 번째 주인공이 되어 보세요!</p>'; }
+      catch(e){ html='<p class="muted">랭킹을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>'; }
+    }
+  } else {
+    const list=storeGet('pg_records')||[];
+    html = list.length ? rankTable(list) : '<p class="muted">아직 기록이 없어요. 인생을 한 번 끝까지 살아보세요!</p>';
+  }
+  const i = await modal({title: tab==='online' ? '🌐 전체 랭킹 TOP 50' : '📒 내 기록 TOP 10', html,
+    choices:[{label: tab==='online' ? '📒 내 기록 보기' : '🌐 전체 랭킹 보기'}, {label:'닫기'}]});
+  if(i===0) return showRanking(tab==='online' ? 'local' : 'online');
+}
+async function submitRank(){
+  const btn=$('#rankBtn');
+  if(!btn || S.submitted) return;
+  btn.disabled=true; btn.textContent='등록 중…';
+  try{
+    await submitScore(S.rankRec);
+    S.submitted=true; btn.textContent='✅ 랭킹 등록 완료';
+    await showRanking('online');
+  }catch(e){
+    btn.disabled=false; btn.textContent='🌐 랭킹 등록 (다시 시도)';
+  }
+}
 
 /* ================= 시작 화면 ================= */
 function showStart(){
@@ -885,9 +993,10 @@ function showStart(){
     <div class="btnrow">
       <button class="primary" onclick="startGame()">🎮 이 인생으로 시작</button>
       <button class="ghost" onclick="reroll()" ${rerolls<=0?'disabled style="opacity:.4"':''}>🎲 다시 뽑기 (${rerolls})</button>
+      <button class="ghost" onclick="showRanking()">🏆 랭킹</button>
       ${saved&&!saved.ended?`<button class="ghost" onclick="loadGame()">▶ 이어하기 (${esc(saved.name)}, ${saved.age}세)</button>`:''}
     </div>
-    <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA·FPS·RTS·격투·배틀로얄 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!</p>`;
+    <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA·FPS·RTS·격투·배틀로얄 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!<br>⭐ 특수훈련은 인생에 5번만 쓸 수 있어요. 결정적인 순간에 쓰세요!</p>`;
 }
 function reroll(){ if(rerolls<=0) return; rerolls--; roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; }
 function startGame(){
@@ -904,6 +1013,7 @@ function attachMeta(){
   S.mmr = {...perG(700), ...S.mmr};
   S.apt = {...perG(()=>rand(.8,1.25)), ...S.apt};
   if(!S.careerGenres) S.careerGenres = S.genre ? [S.genre] : [];
+  if(S.special==null) S.special = 5;
   S.popMeta=()=>S.meta;
 }
 function save(){ if(S && !S.ended){ const c={...S}; delete c.popMeta; storeSet('pg_save', c); } }
@@ -939,7 +1049,7 @@ function render(){
     <div class="genres">${gb}</div>`;
   // 다음 할 일 안내
   let hint='';
-  if(!S.genre) hint = S.age>=15 ? '두 게임을 해보며 재능을 찾아보자. 16살이 되면 주력 장르를 정한다.' : '두 게임을 모두 해보며 재능을 찾아보자.';
+  if(!S.genre) hint = S.age>=15 ? '여러 게임을 해보며 재능을 찾아보자. 16살이 되면 주력 장르를 정한다.' : '여러 게임을 해보며 재능(별점)을 찾아보자.';
   else if(!S.team) hint = `${GENRES[S.genre].game} 랭크 <b>${tierOf(TRYOUT_MMR)}</b> 달성 시 프로팀 스카우트! (현재 ${tierOf(S.mmr[S.genre])} ${S.mmr[S.genre]}점)`;
   else if(S.tier==='2군') hint = `1군 승격 조건: 전투력 <b>${Math.round(teamRating()-8)}</b> 이상`;
   else hint = `이번 분기: <b>${quarterName()}</b>`;
@@ -952,6 +1062,9 @@ function render(){
     b.innerHTML=`<span class="i">${a.icon}</span><b>${a.label}</b><small>${a.desc}</small>`;
     b.onclick=()=>doAction(a); $('#actions').appendChild(b);
   });
+  const sb=document.createElement('button'); sb.className='act sp'; sb.disabled=busy||S.special<=0;
+  sb.innerHTML=`<span class="i">⭐</span><b>특수훈련 ${S.special}/${SPECIAL_MAX}</b><small>인생에 5번! 강력한 성장</small>`;
+  sb.onclick=doSpecial; $('#actions').appendChild(sb);
   // 보조 버튼
   const sub=[];
   if(!S.genre && S.age>=15) sub.push(`<button class="sbtn" onclick="chooseGenreBtn()">🎯 주력 장르 정하기</button>`);

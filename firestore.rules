@@ -1,0 +1,26 @@
+rules_version = '2';
+// 프로게이머 키우기 랭킹용 Firestore 보안 규칙
+// - 누구나 랭킹을 읽을 수 있다
+// - 새 기록 추가만 허용하고, 형식이 맞지 않으면 거부한다
+// - 이미 등록된 기록은 수정·삭제할 수 없다
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /scores/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name','score','title','career','genres','worlds','leagues','age','date','v'])
+        && request.resource.data.name is string && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 12
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 100000
+        && request.resource.data.title is string && request.resource.data.title.size() <= 30
+        && request.resource.data.career is string && request.resource.data.career.size() <= 30
+        && request.resource.data.genres is string && request.resource.data.genres.size() <= 60
+        && request.resource.data.worlds is int && request.resource.data.worlds >= 0 && request.resource.data.worlds <= 20
+        && request.resource.data.leagues is int && request.resource.data.leagues >= 0 && request.resource.data.leagues <= 40
+        && request.resource.data.age is int && request.resource.data.age >= 14 && request.resource.data.age <= 30
+        && request.resource.data.date is string && request.resource.data.date.size() <= 10;
+      allow update, delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
