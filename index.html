@@ -35,7 +35,7 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .bar.fat i{background:linear-gradient(90deg,var(--good),var(--warn),var(--bad))}
 .kv{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-top:1px dashed var(--line)}
 .kv b{font-weight:600}
-.genrebox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-top:8px;font-size:13px}
+.genrebox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 10px;margin-top:6px;font-size:12.5px}
 .genrebox.main{border-color:var(--accent)}
 .genrebox .t{display:flex;justify-content:space-between;font-weight:600}
 .stars{color:var(--gold);letter-spacing:1px}
@@ -165,12 +165,62 @@ const GENRES = {
     ],
     maps:['헤이븐 시티','더스트 포트','아이스박스 랩','사막 기지','네온 타워','폐공장'],
     win:['에이스 클러치! 1:4 역전 라운드','완벽한 리테이크','오퍼 2연속 헤드샷','에코 라운드 승리로 흐름을 잡았다'],
-    lose:['피스톨 라운드부터 꼬였다','상대 오퍼에게 연속 헤드샷','클러치 상황에서 아쉬운 실수','상대의 속공에 대응하지 못했다']
+    lose:['피스톨 라운드부터 꼬였다','상대 오퍼에게 연속 헤드샷','클러치 상황에서 아쉬운 실수','상대의 속공에 대응하지 못했다'],
+    ageMod:a=>a>24 ? 1-(a-24)*.04 : 1
+  },
+  rts: {
+    name:'RTS', game:'갤럭시 커맨더', icon:'🛸',
+    w:{phys:.35, macro:.40, mental:.25},
+    desc:'1:1 개인전. 실력이 그대로 결과로 나온다. 리그가 축소될 위험이 있다.',
+    solo:.25, drift:[.8,1.12],
+    tactics:[
+      {label:'⚔️ 초반 러시', desc:'손빠르기로 끝낸다. 고위험', mod:()=>(S.phys-60)/140 + rand(-.2,.2)},
+      {label:'🏗️ 확장 운영', desc:'자원으로 찍어 누른다. 안정적', mod:()=>(S.macro-60)/170 + rand(-.05,.05)},
+      {label:'🎭 심리전 페이크', desc:'상대의 판단을 흔든다', mod:()=>(S.mental-60)/150 + rand(-.15,.15)},
+    ],
+    maps:['로스트 템플','블레이드 캐년','서킷 브레이커','폴라 나이트','크로스 게임'],
+    win:['앞마당 확장 후 물량으로 압살','드랍십 견제로 일꾼을 초토화','완벽한 타이밍 러시 성공','상대 빌드를 정확히 읽고 카운터'],
+    lose:['초반 러시를 막지 못했다','자원 싸움에서 밀렸다','기습 드랍에 본진이 털렸다','후반 운영에서 역전당했다'],
+    ageMod:a=>a>25 ? 1-(a-25)*.02 : 1
+  },
+  fight: {
+    name:'격투', game:'파이트 크라운', icon:'🥊',
+    w:{phys:.40, macro:.25, mental:.35},
+    desc:'오래 할 수 있는 장인의 길. 나이가 들수록 노련해진다. 상금은 적지만 팬층이 단단하다.',
+    solo:.4, pay:.6, decay:.4, drift:[.9,1.12],
+    tactics:[
+      {label:'🔥 러시 다운', desc:'쉴 틈 없이 몰아친다. 고위험', mod:()=>(S.phys-60)/140 + rand(-.18,.18)},
+      {label:'🛡️ 견제와 딜레이 캐치', desc:'침착하게 빈틈을 노린다. 안정적', mod:()=>(S.macro-55)/170 + rand(-.05,.05)},
+      {label:'🧠 읽기 싸움', desc:'상대의 다음 수를 읽는다. 극단적', mod:()=>(S.mental-60)/120 + rand(-.25,.25)},
+    ],
+    win:['퍼펙트 KO!','체력 1픽셀 남기고 역전!','10히트 콤보 작렬','완벽한 딜레이 캐치'],
+    lose:['상대 잡기에 연속으로 당했다','콤보 실수가 뼈아팠다','읽기 싸움에서 졌다','타임오버 판정패'],
+    ageMod:a=>a>23 ? 1+Math.min(a-23,6)*.008 : 1
+  },
+  br: {
+    name:'배틀로얄', game:'라스트 아일랜드', icon:'🪂',
+    w:{phys:.40, macro:.30, mental:.30},
+    desc:'운 요소가 커서 결과가 들쭉날쭉하다. 방송 효율이 좋아 스트리머로 전환하기 유리하다.',
+    solo:.6, variance:.55, streamMul:1.4, drift:[.84,1.14],
+    tactics:[
+      {label:'🪂 핫드랍 교전', desc:'초반부터 킬을 쓸어 담는다. 고위험', mod:()=>(S.phys-60)/140 + rand(-.25,.25)},
+      {label:'🗺️ 자기장 운영', desc:'안전지대를 먼저 잡는다. 안정적', mod:()=>(S.macro-60)/170 + rand(-.05,.05)},
+      {label:'🫥 존버 플레이', desc:'끝까지 살아남는다', mod:()=>(S.mental-60)/150 + rand(-.1,.1)},
+    ],
+    win:['자기장 운이 따랐다','마지막 1:1 교전 승리','고지대 선점 성공','풀 파티 섬멸'],
+    lose:['초반 교전에서 전멸','자기장에 갇혀 쓸려나갔다','3파전 사이에 끼였다','차량 이동 중 저격당했다']
   }
 };
+const GKEYS = Object.keys(GENRES);
+const GDEF = {solo:.6, pay:1, decay:1, drift:[.85,1.17], streamMul:1, variance:1, ageMod:()=>1};
+for(const k of GKEYS) GENRES[k] = {...GDEF, ...GENRES[k]};
+const META0 = {moba:1.1, fps:1.0, rts:.85, fight:.8, br:1.15};
 const TEAMS = {
   moba:[['서울 드래곤즈',82],['부산 타이탄즈',78],['인천 팬텀',74],['대구 블레이즈',70],['광주 스톰',66],['수원 나이츠',62],['대전 볼트',57],['제주 웨이브',52]],
-  fps:[['스틸 이글스',82],['네온 바이퍼',78],['크림슨 팽',74],['아이언 호크',70],['블랙 로터스',66],['실버 울프',62],['썬더 레이븐',57],['노바 스쿼드',52]]
+  fps:[['스틸 이글스',82],['네온 바이퍼',78],['크림슨 팽',74],['아이언 호크',70],['블랙 로터스',66],['실버 울프',62],['썬더 레이븐',57],['노바 스쿼드',52]],
+  rts:[['서울 커맨더스',82],['부산 프론티어',78],['인천 제네시스',74],['대구 오버로드',70],['광주 아르테미스',66],['울산 스타게이트',62],['청주 레기온',57],['포항 코스모',52]],
+  fight:[['콤보 브레이커즈',82],['KO 스트라이커즈',78],['아케이드 킹즈',74],['카운터 히트',70],['프레임 퍼펙트',66],['저스트 가드',62],['스틱 마스터즈',57],['라운드 원',52]],
+  br:[['서바이벌 X',82],['아일랜드 킹즈',78],['파라슈트',74],['레드존',70],['에어드랍',66],['라스트맨',62],['블루존',57],['루터즈',52]]
 };
 const WORLD = ['LA 피닉스','베를린 울브즈','상하이 드래곤','도쿄 사무라이','상파울루 재규어','파리 레볼루션','스톡홀름 바이킹','코펜하겐 라이온'];
 const RIVALS = ['블레이즈','섀도우','루나','제로','카이저','미라지'];
@@ -193,7 +243,8 @@ const chance = p => Math.random() < p;
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function won(m){ m=Math.round(m); return Math.abs(m)>=10000 ? (m/10000).toFixed(1)+'억원' : m.toLocaleString()+'만원'; }
 const tierOf = m => { let t=TIERS[0][1]; for(const [v,n] of TIERS) if(m>=v) t=n; return t; };
-const other = g => g==='moba' ? 'fps' : 'moba';
+const perG = v => Object.fromEntries(GKEYS.map(g=>[g, typeof v==='function'?v(g):v]));
+function bestOther(){ return GKEYS.filter(g=>g!==S.genre && S.played[g]>=3 && S.apt[g]>=1.05).sort((a,b)=>S.apt[b]-S.apt[a])[0]; }
 function grade(x){ return x>=1.2?'S':x>=1.08?'A':x>=.95?'B':x>=.87?'C':'D'; }
 function stars(g){ const n=clamp(Math.round((S.apt[g]-.8)/.45*4)+1,1,5); return '★'.repeat(n)+'☆'.repeat(5-n); }
 function storeGet(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
@@ -209,7 +260,7 @@ function rollBirth(){
     family,
     talent:{phys:rand(.8,1.3), macro:rand(.8,1.3), mental:rand(.8,1.3)},
     base:{phys:ri(15,35), macro:ri(15,35), mental:ri(25,50)+family.mental, health:ri(30,60), edu:ri(20,60)},
-    apt:{moba:rand(.8,1.25), fps:rand(.8,1.25)}
+    apt:perG(()=>rand(.8,1.25))
   };
 }
 
@@ -219,7 +270,7 @@ function newLife(r, name){
     age:14, q:0, turn:0,
     phys:r.base.phys, macro:r.base.macro, mental:clamp(r.base.mental), health:r.base.health, edu:r.base.edu,
     pop:0, fatigue:10, money:r.family.money,
-    skill:{moba:0,fps:0}, mmr:{moba:700,fps:700}, played:{moba:0,fps:0},
+    skill:perG(0), mmr:perG(700), played:perG(0), meta:{...META0}, careerGenres:[],
     genre:null, team:null, tier:null, teamBonus:0, salaryMul:1, abroad:false, seed:99,
     injury:0, slump:0, yearChamp:false,
     trophies:{league:[],worlds:[]}, champGenres:[], seasons:0, pogs:0, earned:0,
@@ -229,19 +280,21 @@ function newLife(r, name){
 }
 
 /* ================= 핵심 계산 ================= */
-const cg = () => S.genre || (S.played.fps > S.played.moba ? 'fps' : 'moba');
+const cg = () => S.genre || GKEYS.reduce((a,b)=>S.played[b]>S.played[a]?b:a);
 function power(g=cg()){
   const w = GENRES[g].w;
   let p = (w.phys*S.phys + w.macro*S.macro + w.mental*S.mental) * (.55 + S.skill[g]/220) * S.apt[g];
   if(S.fatigue>70) p *= .88;
   if(S.slump>0) p *= .82;
-  if(g==='fps' && S.age>24) p *= 1-(S.age-24)*.04;
+  p *= GENRES[g].ageMod(S.age);
   return p;
 }
 const pw = () => power();
 function teamRating(){ return S.team ? S.team.rating + S.teamBonus : 0; }
-function teamStr(){ return .6*teamRating() + .4*(S.injury>0 ? teamRating()-8 : pw()); }
+const eff = p => p>75 ? 75+(p-75)*.5 : p; // 고점에서는 실력 차이가 덜 벌어진다
+function teamStr(){ const w=GENRES[S.genre].solo; return w*teamRating() + (1-w)*(S.injury>0 ? teamRating()-8 : eff(pw())); }
 function winProb(opp){ return 1/(1+Math.exp(-(teamStr()-opp.rating)/8)); }
+function autoWin(opp){ return chance(.5 + (winProb(opp)-.5)*GENRES[S.genre].variance); }
 
 function grow(key, rate){
   const mult = (S.slump>0?.5:1) * (S.talent[key]||1);
@@ -315,7 +368,7 @@ function soloq(g){
 function getActions(){
   const inj = S.injury>0, A=[];
   if(!S.genre){
-    for(const g of ['moba','fps']) A.push({icon:GENRES[g].icon, label:`랭크: ${GENRES[g].game}`, desc:'숙련도·피지컬·랭크↑ 피로↑', dis:inj, run:()=>soloq(g)});
+    for(const g of GKEYS) A.push({icon:GENRES[g].icon, label:`랭크: ${GENRES[g].name}`, desc:`${GENRES[g].game} · 숙련도·랭크↑`, dis:inj, run:()=>soloq(g)});
   } else {
     const g=S.genre;
     A.push({icon:GENRES[g].icon, label:'솔로랭크', desc:'숙련도·피지컬·랭크↑ 피로↑', dis:inj, run:()=>soloq(g)});
@@ -331,8 +384,9 @@ function getActions(){
     return inj ? '재활 운동으로 손목을 관리했다.' : '헬스장에서 땀을 흘렸다. 몸이 가볍다.'; }});
   A.push({icon:'📺', label:'방송', desc:'인기·돈↑', run:()=>{
     const meta = S.genre ? S.popMeta()[S.genre] : 1;
-    const gain = (2 + (S.team?1.5:0)) * meta * (1 - S.pop/130);
-    const cash = Math.round(S.pop*4*meta + 20);
+    const sm = S.genre ? GENRES[S.genre].streamMul : 1;
+    const gain = (2 + (S.team?1.5:0)) * meta * sm * (1 - S.pop/130);
+    const cash = Math.round(S.pop*4*meta*sm + 20);
     S.pop = clamp(S.pop+gain); S.money += cash; S.earned += cash; tire(6);
     return `개인 방송을 켰다. 시청자 ${Math.round(30+S.pop*S.pop*3)}명!`; }});
   A.push({icon:'🛌', label:'휴식', desc:'피로↓↓ 멘탈↑', run:()=>{
@@ -358,7 +412,7 @@ async function doAction(a){
 /* ================= 턴 진행 ================= */
 async function endOfTurn(){
   S.fatigue = clamp(S.fatigue-6);
-  S.pop = clamp(S.pop - S.pop*.03); // 인기는 가만히 두면 조금씩 식는다
+  S.pop = clamp(S.pop - S.pop*.03*(S.genre?GENRES[S.genre].decay:1)); // 인기는 가만히 두면 조금씩 식는다
   // 컨디션
   if(S.injury>0){ S.injury--; if(!S.injury) log('🩹 부상에서 회복했다!','', 'good'); }
   else if(S.fatigue>90 && chance(.35)){
@@ -379,7 +433,7 @@ async function endOfTurn(){
   // 수입
   if(S.tier){
     const meta = S.popMeta()[S.genre];
-    const sal = S.tier==='1군' ? Math.round((400 + pw()*8 + S.pop*8) * meta * S.salaryMul) : 150;
+    const sal = S.tier==='1군' ? Math.round((400 + pw()*8 + S.pop*8) * meta * GENRES[S.genre].pay * S.salaryMul) : 150;
     S.money += sal; S.earned += sal;
   }
   // 랜덤 이벤트
@@ -399,9 +453,9 @@ async function newYear(){
   if(S.age>=26){ S.health = clamp(S.health-2); }
   // 메타 변화
   const news=[];
-  for(const g of ['moba','fps']){
-    const before=S.meta[g];
-    S.meta[g] = clamp(before*rand(.85,1.17), .6, 1.6);
+  for(const g of GKEYS){
+    const before=S.meta[g], [lo,hi]=GENRES[g].drift;
+    S.meta[g] = clamp(before*rand(lo,hi), .5, 1.6);
     const d=S.meta[g]-before;
     if(d>.1) news.push(`🔥 ${GENRES[g].game} 시청자 급증! 리그 연봉·인기 상승`);
     if(d<-.1) news.push(`📉 ${GENRES[g].game} 인기 하락, 리그 축소 우려`);
@@ -427,16 +481,16 @@ async function milestones(){
 }
 
 async function chooseGenre(forced){
-  const html = ['moba','fps'].map(g=>`<div class="genrebox"><div class="t"><span>${GENRES[g].icon} ${GENRES[g].game} <small class="muted">${GENRES[g].name}</small></span>
+  const html = GKEYS.map(g=>`<div class="genrebox"><div class="t"><span>${GENRES[g].icon} ${GENRES[g].game} <small class="muted">${GENRES[g].name}</small></span>
     <span class="stars">${S.played[g]>=3?stars(g):'??? '}</span></div>
     <div class="muted">${GENRES[g].desc}</div>
     <div>랭크 ${tierOf(S.mmr[g])} · 숙련도 ${Math.round(S.skill[g])} · 리그 인기 ${S.meta[g].toFixed(2)}x</div></div>`).join('');
-  const choices=['moba','fps'].map(g=>({label:`${GENRES[g].icon} ${GENRES[g].game}에 올인`, desc:`예상 전투력 ${Math.round(power(g))}`}));
+  const choices=GKEYS.map(g=>({label:`${GENRES[g].icon} ${GENRES[g].game}에 올인`, desc:`예상 전투력 ${Math.round(power(g))}`}));
   if(!forced) choices.push({label:'아직 더 고민한다'});
   const i = await modal({title:'🎯 주력 장르 선택', html:`<p>${forced?'열여섯 살. 이제 한 길을 정해야 할 때다.':'어떤 게임으로 프로를 노릴까?'}</p>${html}`, choices});
-  if(i>1) return;
-  const g=['moba','fps'][i];
-  S.genre=g; hist(`${GENRES[g].game}(${GENRES[g].name})를 주력 장르로 결정`,'key');
+  if(i>=GKEYS.length) return;
+  const g=GKEYS[i];
+  S.genre=g; S.careerGenres.push(g); hist(`${GENRES[g].game}(${GENRES[g].name})를 주력 장르로 결정`,'key');
   log(`🎯 주력 장르: ${GENRES[g].game}`,'','key');
 }
 
@@ -467,7 +521,11 @@ function randomOpp(){
 }
 function setLine(g,n,win){
   const G=GENRES[g];
-  if(g==='moba') return `<li class="${win?'w':'l'}">${n}세트 ${win?'승':'패'} — ${pick(win?G.win:G.lose)}</li>`;
+  const c = win?'w':'l', line = pick(win?G.win:G.lose);
+  if(g==='moba') return `<li class="${c}">${n}세트 ${win?'승':'패'} — ${line}</li>`;
+  if(g==='rts') return `<li class="${c}">${n}세트 ${pick(G.maps)} <b>${win?'승':'패'}</b> — ${line}</li>`;
+  if(g==='fight') return `<li class="${c}">${n}게임 <b>${win?'2 : '+ri(0,1):ri(0,1)+' : 2'}</b> — ${line}</li>`;
+  if(g==='br'){ const place = win ? (chance(.4)?'🍗 1위 치킨!':`${ri(2,4)}위`) : `${ri(6,16)}위`; return `<li class="${c}">${n}라운드 <b>${place}</b> · ${ri(win?4:0,win?14:5)}킬 — ${line}</li>`; }
   const ot = chance(.15), lo = ot ? 12 : ri(3,11), hi = ot ? 14 : 13;
   return `<li class="${win?'w':'l'}">${n}맵 ${pick(G.maps)} <b>${win?hi:lo} : ${win?lo:hi}</b> — ${pick(win?G.win:G.lose)}</li>`;
 }
@@ -478,15 +536,15 @@ async function featured(opp, stage, bo, weight=1){
   if(S.injury>0){
     tName='부상으로 결장';
   } else {
-    const pct=Math.round(base*100);
+    const pct=Math.round(clamp(.5+(base-.5)*G.variance,.05,.95)*100);
     const i = await modal({title:`🏟️ ${stage}`, html:`
       <div class="vs"><span>${esc(S.team.name)}</span><span class="mid">VS</span><span>${esc(opp.name)}</span></div>
       <div class="prob"><i style="width:${pct}%"></i></div>
       <p class="muted">예상 승률 <b style="color:var(--text)">${pct}%</b> · ${bo}판 ${need}선승제 · 상대 전력 ${opp.rating}</p>
-      <p>감독: "오늘 작전은 네가 정해라."</p>`, choices:G.tactics.map(t=>({label:t.label,desc:t.desc}))});
+      ${g==='br'?'<p class="muted">라운드마다 상대 팀보다 높은 순위를 차지하면 승리</p>':''}<p>감독: "오늘 작전은 네가 정해라."</p>`, choices:G.tactics.map(t=>({label:t.label,desc:t.desc}))});
     mod=G.tactics[i].mod(); tName=G.tactics[i].label;
   }
-  const p=clamp(base+mod,.05,.95);
+  const p=clamp(.5 + (base+mod-.5)*G.variance, .05, .95);
   let w=0,l=0,n=1; const lines=[];
   while(w<need && l<need){ const win=chance(p); win?w++:l++; lines.push(setLine(g,n++,win)); }
   const win = w===need;
@@ -494,7 +552,7 @@ async function featured(opp, stage, bo, weight=1){
   if(win && S.injury<=0 && chance(clamp(.2+(pw()-60)/60,.05,.7))){ pog=true; S.pogs++; }
   const meta=S.popMeta()[g];
   S.pop = clamp(S.pop + (win ? (1+(pog?2:0))*weight*meta : -weight*.8));
-  S.mental = clamp(S.mental + (win?2:-3));
+  S.mental = clamp(S.mental + (win?.7:-2));
   await modal({title: win?'🏆 승리!':'💀 패배', html:`
     <p class="muted" style="text-align:center">${esc(stage)} · 작전: ${tName}</p>
     <div class="score">${w} : ${l}</div><ul class="pbp">${lines.join('')}</ul>
@@ -504,7 +562,7 @@ async function featured(opp, stage, bo, weight=1){
 async function regularSeason(name){
   let w=0,l=0;
   (await featured(randomOpp(), `${name} 정규시즌 빅매치`, 3)) ? w++ : l++;
-  for(let i=0;i<6;i++) chance(winProb(randomOpp())) ? w++ : l++;
+  for(let i=0;i<6;i++) autoWin(randomOpp()) ? w++ : l++;
   S.seasons++;
   S.seed = w>=6?1 : w>=5?2 : w>=4?ri(3,4) : w>=3?ri(5,6) : ri(7,8);
   const txt = `${name} 정규시즌 ${w}승 ${l}패 · ${S.seed}위${S.seed<=4?' (플레이오프 진출!)':''}`;
@@ -642,8 +700,8 @@ const EVENTS = [
  {id:'national', once:true, cond:()=>S.tier==='1군'&&pw()>=64, title:'🇰🇷 국가대표 발탁!', text:'아시안게임 e스포츠 국가대표로 선발되었다!', choices:[
    {label:'태극마크를 단다', run:()=>{ if(chance(clamp((pw()-50)/25,.2,.9))){ S.flags.gold=true; hist('아시안게임 금메달 🥇','key'); fx({pop:20,mental:10,fatigue:15}); return '결승 승리! 금메달을 목에 걸었다!'; } hist('아시안게임 은메달 🥈','good'); fx({pop:8,fatigue:15}); return '아쉽게 은메달. 그래도 자랑스럽다.'; }},
    {label:'컨디션 문제로 고사한다', run:()=>{ fx({pop:-10}); return '여론이 싸늘하다...'; }}]},
- {id:'switch', once:true, cond:()=>!!S.genre&&!S.switched&&S.age>=17&&S.age<=24&&S.apt[other(S.genre)]>=1.05&&S.played[other(S.genre)]>=3, title:'📞 다른 장르의 러브콜', text:()=>{ const o=other(S.genre); return `${GENRES[o].game} 팀 <b>${TEAMS[o][4][0]}</b>에서 연락이 왔다.<br>"당신의 ${GENRES[o].name} 재능이 아깝습니다. 우리 팀으로 전향하지 않겠어요?"<br><small class="muted">전향하면 인기가 절반이 되고 2군부터 시작한다.</small>`; }, choices:[
-   {label:'전향한다!', run:()=>{ const o=other(S.genre); doSwitch(o); joinTeam({name:TEAMS[o][4][0], rating:TEAMS[o][4][1]}); return `${GENRES[o].game}로 전향했다. 새로운 도전의 시작!`; }},
+ {id:'switch', once:true, cond:()=>!!S.genre&&!S.switched&&S.age>=17&&S.age<=24&&!!bestOther(), title:'📞 다른 장르의 러브콜', text:()=>{ const o=bestOther(); S.flags.switchTo=o; return `${GENRES[o].game} 팀 <b>${TEAMS[o][4][0]}</b>에서 연락이 왔다.<br>"당신의 ${GENRES[o].name} 재능이 아깝습니다. 우리 팀으로 전향하지 않겠어요?"<br><small class="muted">전향하면 인기가 절반이 되고 2군부터 시작한다.</small>`; }, choices:[
+   {label:'전향한다!', run:()=>{ const o=S.flags.switchTo; doSwitch(o); joinTeam({name:TEAMS[o][4][0], rating:TEAMS[o][4][1]}); return `${GENRES[o].game}로 전향했다. 새로운 도전의 시작!`; }},
    {label:'지금 장르에 집중한다', run:()=>{ fx({mental:2}); return '한 우물만 파기로 했다.'; }}]},
  {id:'rookie', cond:()=>S.tier==='2군', title:'⚔️ 2군 주전 경쟁', text:'같은 포지션 연습생이 무섭게 치고 올라온다.', choices:[
    {label:'연습량을 늘린다', run:()=>{ fx({skill:4,fatigue:12}); return '밀릴 수 없다. 이를 악물었다.'; }},
@@ -654,6 +712,9 @@ const EVENTS = [
  {id:'donate', cond:()=>S.money>=1500, title:'🎗️ 기부 제안', text:'소아암 환우를 위한 자선 대회에 기부하자는 제안이 왔다.', choices:[
    {label:'500만원 기부', run:()=>{ fx({money:-500,pop:6,mental:5}); return '"선행 프로게이머" 기사가 났다.'; }},
    {label:'다음에 하겠다', run:()=>{ return '마음만 보탰다.'; }}]},
+ {id:'rtsfold', once:true, cond:()=>S.genre==='rts'&&!!S.team&&S.meta.rts<.65, title:'📉 리그 축소 통보', text:()=>`${GENRES.rts.game} 리그 스폰서가 빠져나갔다. <b>${S.team.name}</b> 게임단이 해체된다.`, choices:[
+   {label:'다른 장르로 전향한다', desc:'가장 재능 있는 장르로 새 출발', run:()=>{ const o=bestOther()||GKEYS.filter(g=>g!=='rts').reduce((a,b)=>S.apt[b]>S.apt[a]?b:a); hist(`${S.team.name} 해체`,'bad'); doSwitch(o); return `${GENRES[o].game}로 새 출발한다. 랭크부터 다시 시작이다.`; }},
+   {label:'끝까지 남는다', run:()=>{ hist(`${S.team.name} 해체`,'bad'); S.team=null; S.tier=null; S.salaryMul=1; S.tryCool=S.turn+1; fx({mental:5,pop:4}); return '"마지막 RTS 선수" 팬들이 의리를 응원한다. 새 팀을 찾아야 한다.'; }}]},
  {id:'bday', cond:()=>S.pop>=35, title:'🎂 생일', text:'팬들이 지하철역에 생일 광고를 걸어줬다!', choices:[
    {label:'감동이다...', run:()=>{ fx({mental:8,pop:2}); return '인증샷을 올렸다. 더 열심히 해야겠다.'; }}]},
 ];
@@ -673,19 +734,18 @@ async function randomEvent(){
 /* ================= 장르 전향 / 은퇴 ================= */
 function doSwitch(g){
   const from=S.genre;
-  S.genre=g; S.switched=true; S.pop=S.pop*.5;
+  S.genre=g; S.switched=true; S.pop=S.pop*.5; S.careerGenres.push(g);
   S.team=null; S.tier=null; S.teamBonus=0; S.salaryMul=1; S.abroad=false; S.seed=99; S.tryCool=0;
   hist(`${GENRES[from].game} → ${GENRES[g].game} 장르 전향`,'key');
   log(`🔄 ${GENRES[g].game}로 장르 전향!`,'','key');
 }
 async function askSwitch(){
   if(busy) return;
-  const o=other(S.genre);
-  const i = await modal({title:'🔄 장르 전향', html:`<p><b>${GENRES[o].game}</b>(${GENRES[o].name})로 전향할까요?</p>
-    <ul class="pbp"><li>현재 소속팀을 떠나고, 인기가 절반이 된다</li><li>${GENRES[o].game} 랭크(${tierOf(S.mmr[o])})로 다시 입단 테스트를 받아야 한다</li><li>두 장르에서 우승하면 전설의 칭호를 얻는다</li></ul>
-    <p class="muted">${GENRES[o].game} 재능: <span class="stars">${S.played[o]>=3?stars(o):'???'}</span> · 예상 전투력 ${Math.round(power(o))}</p>`,
-    choices:[{label:'전향한다'},{label:'취소'}]});
-  if(i===0){ doSwitch(o); render(); save(); }
+  const others=GKEYS.filter(g=>g!==S.genre);
+  const i = await modal({title:'🔄 장르 전향', html:`<p>어떤 장르로 전향할까요?</p>
+    <ul class="pbp"><li>현재 소속팀을 떠나고, 인기가 절반이 된다</li><li>새 장르 랭크로 다시 입단 테스트를 받아야 한다</li><li>두 장르에서 우승하면 전설의 칭호를 얻는다</li></ul>`,
+    choices:[...others.map(o=>({label:`${GENRES[o].icon} ${GENRES[o].game}`, desc:`재능 ${S.played[o]>=3?stars(o):'???'} · ${tierOf(S.mmr[o])} · 예상 전투력 ${Math.round(power(o))}`})),{label:'취소'}]});
+  if(i<others.length){ doSwitch(others[i]); render(); save(); }
 }
 async function askRetire(){
   if(busy) return;
@@ -739,7 +799,7 @@ function showEnding(){
   const best=storeGet('pg_best');
   const isBest=!best || score>best.score;
   if(isBest) storeSet('pg_best',{score,title,name:S.name});
-  const genres = [S.switched?'MOBA + FPS':S.genre?GENRES[S.genre].game:'정하지 못함'][0];
+  const genres = S.careerGenres.length ? S.careerGenres.map(g=>GENRES[g].game).join(' → ') : '정하지 못함';
   const trophies = [
     ...S.trophies.worlds.map(t=>`<div class="trophy">👑 월드 챔피언 — ${t}</div>`),
     ...S.trophies.league.map(t=>`<div class="trophy">🏆 ${t}</div>`),
@@ -797,7 +857,7 @@ function showStart(){
       <button class="ghost" onclick="reroll()" ${rerolls<=0?'disabled style="opacity:.4"':''}>🎲 다시 뽑기 (${rerolls})</button>
       ${saved&&!saved.ended?`<button class="ghost" onclick="loadGame()">▶ 이어하기 (${esc(saved.name)}, ${saved.age}세)</button>`:''}
     </div>
-    <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA와 FPS 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!</p>`;
+    <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA·FPS·RTS·격투·배틀로얄 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!</p>`;
 }
 function reroll(){ if(rerolls<=0) return; rerolls--; roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; }
 function startGame(){
@@ -808,7 +868,14 @@ function startGame(){
   $('#start').classList.add('hide'); $('#game').classList.remove('hide');
   render(); save();
 }
-function attachMeta(){ if(!S.meta) S.meta={moba:1.1,fps:1.0}; S.popMeta=()=>S.meta; }
+function attachMeta(){
+  S.meta = {...META0, ...(S.meta||{})};
+  S.skill = {...perG(0), ...S.skill}; S.played = {...perG(0), ...S.played};
+  S.mmr = {...perG(700), ...S.mmr};
+  S.apt = {...perG(()=>rand(.8,1.25)), ...S.apt};
+  if(!S.careerGenres) S.careerGenres = S.genre ? [S.genre] : [];
+  S.popMeta=()=>S.meta;
+}
 function save(){ if(S && !S.ended){ const c={...S}; delete c.popMeta; storeSet('pg_save', c); } }
 function loadGame(){ const s=storeGet('pg_save'); if(!s) return; S=s; attachMeta(); $('#start').classList.add('hide'); $('#game').classList.remove('hide'); render(); }
 
@@ -829,7 +896,7 @@ function render(){
   if(S.fatigue>70) st.push(`<span class="pill warn">😵 과로</span>`);
   $('#status').innerHTML=st.join('');
   // 스탯
-  const gb = ['moba','fps'].map(k=>`<div class="genrebox ${S.genre===k?'main':''}">
+  const gb = GKEYS.map(k=>`<div class="genrebox ${S.genre===k?'main':''}">
     <div class="t"><span>${GENRES[k].icon} ${GENRES[k].game}</span><span class="stars">${S.played[k]>=3?stars(k):'???'}</span></div>
     <div class="muted">${tierOf(S.mmr[k])} ${S.mmr[k]}점 · 숙련도 ${Math.round(S.skill[k])} · 인기 ${S.meta[k].toFixed(2)}x</div></div>`).join('');
   $('#stats').innerHTML = `
