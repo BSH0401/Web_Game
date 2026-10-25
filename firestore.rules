@@ -19,6 +19,17 @@ service cloud.firestore {
         && request.resource.data.date is string && request.resource.data.date.size() <= 10;
       allow update, delete: if false;
     }
+    // 건의사항·버그 제보: 누구나 보낼 수 있지만, 읽기는 Firebase 콘솔(관리자)에서만 가능
+    match /feedback/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['type','message','contact','state','ua','date','v'])
+        && request.resource.data.type in ['건의','버그','기타']
+        && request.resource.data.message is string && request.resource.data.message.size() >= 2 && request.resource.data.message.size() <= 1000
+        && request.resource.data.contact is string && request.resource.data.contact.size() <= 80
+        && request.resource.data.state is string && request.resource.data.state.size() <= 200
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 200
+        && request.resource.data.date is string && request.resource.data.date.size() <= 20;
+      allow read, update, delete: if false;
+    }
     match /{document=**} {
       allow read, write: if false;
     }

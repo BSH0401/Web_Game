@@ -211,6 +211,16 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
   .genres .genrebox{margin-top:6px}
   .steps{font-size:10.5px}
 }
+.fbtypes{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.fbtypes label{cursor:pointer}
+.fbtypes input{position:absolute;opacity:0;pointer-events:none}
+.fbtypes span{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;background:var(--panel2)}
+.fbtypes input:checked + span{border-color:var(--accent);color:#cfe0ff;background:#1b2440}
+.fbtypes input:focus-visible + span{outline:2px solid var(--accent)}
+textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit;resize:vertical;min-height:110px}
+.fbmeta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin:4px 0 8px}
+.fbcheck{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:8px}
+.fberr{color:var(--bad);font-size:12.5px;margin-top:6px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -218,7 +228,7 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 <div class="wrap">
   <header class="top">
     <h1 class="logo" style="margin:0">🎮 <span>프로게이머 키우기</span></h1>
-    <div class="hdr-btns"><div class="status" id="status"></div><button class="sbtn" onclick="showRanking()">🏆 랭킹</button></div>
+    <div class="hdr-btns"><div class="status" id="status"></div><button class="sbtn" onclick="showFeedback()">💬 건의·버그</button><button class="sbtn" onclick="showRanking()">🏆 랭킹</button></div>
   </header>
 
   <!-- 시작 화면 -->
@@ -994,6 +1004,7 @@ function showEnding(){
     <div class="btnrow"><button class="primary" onclick="restart()">🔁 다시 태어나기</button>
       ${rankOn()?'<button class="ghost" id="rankBtn" onclick="submitRank()">🌐 랭킹 등록</button>':''}
       <button class="ghost" onclick="showRanking()">🏆 랭킹 보기</button>
+      <button class="ghost" onclick="showFeedback()">💬 건의·버그</button>
       <button class="ghost" id="copyBtn" onclick="copyResult()">📋 결과 복사</button></div>
   </div>`;
   S.shareText = `🎮 프로게이머 키우기\n${S.name} (14~${S.age}세)\n칭호: ${title} / 은퇴 후: ${sub}\n월드 우승 ${S.trophies.worlds.length}회 · 리그 우승 ${S.trophies.league.length}회 · 최고 ${tierOf(S.peakMmr)}\n인생 점수 ${score.toLocaleString()}점`;
@@ -1030,12 +1041,55 @@ async function fetchTop(){
     return {name:v('name'), score:v('score'), title:v('title'), career:v('career'), genres:v('genres'), date:v('date')};
   });
 }
-async function submitScore(rec){
+async function fsCreate(collection, rec){
   const fields={};
   for(const [k,v] of Object.entries(rec)) fields[k] = typeof v==='number' ? {integerValue:String(Math.round(v))} : {stringValue:String(v)};
-  const r = await fetch(`${fsBase()}/scores?key=${RANK.apiKey}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({fields})});
-  if(!r.ok) throw new Error('submit '+r.status);
+  const r = await fetch(`${fsBase()}/${collection}?key=${RANK.apiKey}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({fields})});
+  if(!r.ok) throw new Error(collection+' '+r.status);
 }
+const submitScore = rec => fsCreate('scores', rec);
+
+/* ================= 건의·버그 제보 ================= */
+const FB_TYPES = [['건의','💡 건의사항'],['버그','🐞 버그 제보'],['기타','💬 기타']];
+function gameStateText(){
+  if(!S) return '게임 시작 전';
+  return [`${S.age}세 ${S.q+1}분기`, S.genre?GENRES[S.genre].name:'장르 미정', S.team?`${S.team.name} ${S.tier}`:'무소속', S.ended?'엔딩':'진행 중'].join(' · ').slice(0,200);
+}
+async function showFeedback(draft={type:'건의', message:'', contact:'', withState:true}, err=''){
+  const wasBusy = busy; busy = true;
+  const i = await modal({title:'💬 건의사항 · 버그 제보', html:`
+    <p class="muted" style="margin-top:0">게임에 대한 의견이나 발견한 버그를 알려주세요. 개발자가 하나하나 직접 읽어요!</p>
+    <div class="fbtypes">${FB_TYPES.map(([v,l])=>`<label><input type="radio" name="fbType" value="${v}" ${draft.type===v?'checked':''}><span>${l}</span></label>`).join('')}</div>
+    <textarea id="fbMsg" maxlength="1000" placeholder="예) 특수훈련을 쓴 뒤 화면이 멈췄어요 / 이런 이벤트가 있으면 좋겠어요">${esc(draft.message)}</textarea>
+    <div class="fbmeta"><span>버그라면 어떤 상황에서 생겼는지 적어 주시면 큰 도움이 돼요.</span><span id="fbCount">${draft.message.length}/1000</span></div>
+    <input type="text" id="fbContact" maxlength="80" placeholder="답변 받을 연락처 (선택 · 이메일 등)" value="${esc(draft.contact)}">
+    <label class="fbcheck"><input type="checkbox" id="fbState" ${draft.withState?'checked':''}> 현재 게임 상태(${esc(gameStateText())}) 함께 보내기</label>
+    ${err?`<div class="fberr">${err}</div>`:''}`,
+    choices:[{label:'📨 보내기'},{label:'취소'}]});
+  const cur = {
+    type: (document.querySelector('input[name="fbType"]:checked')||{}).value || '기타',
+    message: $('#fbMsg').value.trim(), contact: $('#fbContact').value.trim(), withState: $('#fbState').checked
+  };
+  if(i!==0){ busy = wasBusy; if(S && !S.ended) render(); return; }
+  if(cur.message.length < 2){ busy = wasBusy; return showFeedback(cur, '내용을 두 글자 이상 적어 주세요.'); }
+  const last = storeGet('pg_fb_last') || 0;
+  if(Date.now() - last < 60000){ busy = wasBusy; return showFeedback(cur, '잠시 후 다시 보내 주세요. (1분에 한 번만 보낼 수 있어요)'); }
+  if(!rankOn()){ busy = wasBusy; return showFeedback(cur, '지금은 보낼 수 없어요. 잠시 후 다시 시도해 주세요.'); }
+  const d=new Date(), date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  $('#mTitle').textContent='보내는 중…'; $('#mBody').innerHTML=''; $('#mChoices').innerHTML=''; $('#modal').classList.add('show');
+  try{
+    await fsCreate('feedback', {type:cur.type, message:cur.message.slice(0,1000), contact:cur.contact.slice(0,80),
+      state: cur.withState ? gameStateText() : '', ua:navigator.userAgent.slice(0,200), date, v:1});
+    storeSet('pg_fb_last', Date.now());
+    await info('✅ 보냈어요!', '<p>소중한 의견 고마워요. 더 재미있는 게임으로 보답할게요!</p>');
+  }catch(e){
+    busy = wasBusy;
+    return showFeedback(cur, '보내지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.');
+  }
+  busy = wasBusy;
+  if(S && !S.ended) render();
+}
+document.addEventListener('input', e=>{ if(e.target.id==='fbMsg'){ const c=$('#fbCount'); if(c) c.textContent=`${e.target.value.length}/1000`; } });
 function saveLocalRecord(rec){
   const list = (storeGet('pg_records')||[]).concat([rec]).sort((a,b)=>b.score-a.score).slice(0,10);
   storeSet('pg_records', list);
