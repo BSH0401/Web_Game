@@ -911,7 +911,7 @@ function restart(){ S=null; rerolls=3; roll=rollBirth(); $('#ending').classList.
 
 /* ================= 랭킹 ================= */
 // Firebase 프로젝트를 만든 뒤 projectId와 apiKey를 넣으면 온라인 랭킹이 켜진다.
-const RANK = { projectId:'', apiKey:'' };
+const RANK = { projectId:'web-game-progamer', apiKey:'AIzaSyCJBvxzPUedlrQY2KFL4j8SAMJ5VXGMK9w' };
 const rankOn = () => !!(RANK.projectId && RANK.apiKey);
 const fsBase = () => `https://firestore.googleapis.com/v1/projects/${RANK.projectId}/databases/(default)/documents`;
 async function fetchTop(){
