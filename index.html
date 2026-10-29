@@ -1328,7 +1328,9 @@ function showEnding(){
       <button class="ghost" onclick="showRanking()">🏆 랭킹 보기</button>
       <button class="ghost" onclick="showFeedback()">💬 건의·버그</button>
       <button class="ghost" id="copyBtn" onclick="copyResult()">📋 결과 복사</button></div>
+    <button class="primary" style="width:100%;margin-top:10px;background:linear-gradient(90deg,var(--gold),#ff9f6b);color:#241500" onclick="showShareImage()">🖼️ 결과 이미지 만들기 (저장·공유)</button>
   </div>`;
+  S.endInfo = {title, sub, score};
   S.shareText = `🎮 프로게이머 키우기\n${CT().flag} ${S.name} (14~${S.age}세)\n칭호: ${title} / 은퇴 후: ${sub}\n월드 우승 ${S.trophies.worlds.length}회 · 리그 우승 ${S.trophies.league.length}회 · 최고 ${tierOf(S.peakMmr)}\n인생 점수 ${score.toLocaleString()}점`;
   storeSet('pg_save', null);
   $('#game').classList.add('hide'); $('#ending').classList.remove('hide'); $('#status').innerHTML='';
@@ -1338,6 +1340,101 @@ function showEnding(){
     const t0=performance.now();
     const step=now=>{ const k=Math.min(1,(now-t0)/1200); el.textContent=Math.round(score*(1-Math.pow(1-k,3))).toLocaleString(); if(k<1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
+  }
+}
+/* ================= 결과 이미지 (공유용) ================= */
+function rrect(x, X, Y, W, H, r){ x.beginPath(); x.moveTo(X+r,Y); x.arcTo(X+W,Y,X+W,Y+H,r); x.arcTo(X+W,Y+H,X,Y+H,r); x.arcTo(X,Y+H,X,Y,r); x.arcTo(X,Y,X+W,Y,r); x.closePath(); }
+function fitFont(x, text, weight, size, maxW){ const F=SHARE_FONT; do{ x.font=`${weight} ${size}px ${F}`; size-=2; }while(x.measureText(text).width>maxW && size>18); }
+const SHARE_FONT = '"Noto Color Emoji", system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+async function makeShareImage(){
+  const {title, sub, score} = S.endInfo;
+  const W=1080, H=1350, c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d'), F=SHARE_FONT, font=(w,sz)=>`${w} ${sz}px ${F}`;
+  try{ await document.fonts.ready; }catch(e){}
+  // 배경
+  const bg=x.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#1d2748'); bg.addColorStop(.5,'#0e121d'); bg.addColorStop(1,'#07090f');
+  x.fillStyle=bg; x.fillRect(0,0,W,H);
+  const glow=x.createRadialGradient(W*.8,120,0,W*.8,120,520); glow.addColorStop(0,'rgba(164,107,255,.28)'); glow.addColorStop(1,'rgba(164,107,255,0)');
+  x.fillStyle=glow; x.fillRect(0,0,W,H);
+  const bar=x.createLinearGradient(0,0,W,0); bar.addColorStop(0,'#4f8cff'); bar.addColorStop(1,'#a46bff');
+  x.fillStyle=bar; x.fillRect(0,0,W,12);
+  x.textBaseline='alphabetic';
+  // 머리말
+  x.fillStyle='#8b95aa'; x.font=font(700,34); x.fillText('🎮 프로게이머 키우기 · 인생 결과', 72, 104);
+  // 이름
+  x.fillStyle='#ffffff'; fitFont(x, `${CT().flag} ${S.name}`, 900, 100, W-144); x.fillText(`${CT().flag} ${S.name}`, 72, 232);
+  x.fillStyle='#9aa4b8'; x.font=font(500,36); x.fillText(`14세 ~ ${S.age}세 · ${S.family.emoji} ${S.family.name} 출신`, 72, 292);
+  // 칭호 배지
+  fitFont(x, title, 900, 66, W-224); const tw=x.measureText(title).width;
+  const gold=x.createLinearGradient(72,0,72+tw+88,0); gold.addColorStop(0,'#ffd166'); gold.addColorStop(1,'#ff9f6b');
+  x.save(); x.shadowColor='rgba(255,209,102,.45)'; x.shadowBlur=40; x.fillStyle=gold; rrect(x,72,334,tw+88,112,30); x.fill(); x.restore();
+  x.fillStyle='#241500'; x.fillText(title, 116, 412);
+  x.fillStyle='#e9edf5'; x.font=font(600,40); x.fillText(`은퇴 후 · ${sub}`, 72, 516);
+  // 기록 카드 6칸
+  const games=(S.mw||0)+(S.ml||0);
+  const cells=[
+    ['주 종목', S.careerGenres.length ? S.careerGenres.map(g=>`${GENRES[g].icon}${GENRES[g].name}`).join('→') : '미정'],
+    ['최고 티어', tierOf(S.peakMmr)],
+    ['1군 시즌', `${S.seasons}시즌`],
+    ['공식전', games ? `${S.mw}승 ${S.ml}패` : '-'],
+    ['POG', `${S.pogs}회`],
+    ['총 수입', won(S.earned)],
+  ];
+  const cw=(W-144-2*24)/3, ch=150;
+  cells.forEach(([l,v],i)=>{
+    const cx=72+(i%3)*(cw+24), cy=566+Math.floor(i/3)*(ch+24);
+    x.fillStyle='rgba(28,34,49,.92)'; rrect(x,cx,cy,cw,ch,24); x.fill();
+    x.strokeStyle='#2a3246'; x.lineWidth=2; x.stroke();
+    x.fillStyle='#8b95aa'; x.font=font(600,28); x.fillText(l, cx+26, cy+50);
+    x.fillStyle='#ffffff'; fitFont(x, v, 800, 42, cw-52); x.fillText(v, cx+26, cy+114);
+  });
+  // 트로피
+  const troY=944; let troBottom=troY+80;
+  x.fillStyle='#8b95aa'; x.font=font(700,30); x.fillText('트로피', 72, troY);
+  const tro=[['👑',S.trophies.worlds.length,'월드'],['🏆',S.trophies.league.length,'리그'],['🌐',(S.trophies.nations||[]).length,'네이션스컵'],
+    ['🥇',(S.medals||[]).filter(m=>m.startsWith('🥇')).length,'아시안게임']].filter(t=>t[1]>0);
+  if(tro.length){
+    let tx=72, ty=troY+24;
+    tro.forEach(([ic,n,l])=>{
+      const label=`${ic} ${l} ${n}`; x.font=font(800,33); const w=x.measureText(label).width+44;
+      if(tx+w>W-72){ tx=72; ty+=80; }   // 넘치면 다음 줄로
+      x.fillStyle='rgba(255,209,102,.12)'; rrect(x,tx,ty,w,68,34); x.fill(); x.strokeStyle='rgba(255,209,102,.55)'; x.lineWidth=2; x.stroke();
+      x.fillStyle='#ffe6a6'; x.fillText(label, tx+22, ty+46); tx+=w+14;
+    });
+    troBottom = ty+68;
+  } else { x.fillStyle='#c9d1e3'; x.font=font(500,36); x.fillText('트로피는 없었지만, 꿈을 향한 도전은 진짜였다.', 72, troY+70); }
+  // 점수
+  const scY=Math.max(1136, troBottom+56);   // 트로피가 두 줄이면 점수를 아래로
+  x.fillStyle='#8b95aa'; x.font=font(700,32); x.fillText('인생 점수', 72, scY);
+  const sg=x.createLinearGradient(72,0,620,0); sg.addColorStop(0,'#ffd166'); sg.addColorStop(1,'#ff9f6b');
+  x.fillStyle=sg; x.font=font(900,scY>1136?100:120); x.fillText(score.toLocaleString(), 68, scY+108);
+  const sw=x.measureText(score.toLocaleString()).width;
+  x.fillStyle='#8b95aa'; x.font=font(700,44); x.fillText('점', 68+sw+14, scY+108);
+  // 하단
+  x.fillStyle='#5d6780'; x.font=font(600,28); x.textAlign='right';
+  x.fillText('나도 해보기 👉 bsh0401.github.io/Web_Game', W-72, 1318);
+  x.textAlign='left';
+  return c;
+}
+async function showShareImage(){
+  if(!S || !S.endInfo) return;
+  $('#mTitle').textContent='이미지 만드는 중…'; $('#mBody').innerHTML=''; $('#mChoices').innerHTML=''; $('#modal').classList.add('show');
+  const c = await makeShareImage();
+  const url = c.toDataURL('image/png');
+  const blob = await new Promise(r=>c.toBlob(r,'image/png'));
+  const file = new File([blob], `프로게이머키우기_${S.name}.png`, {type:'image/png'});
+  const canShare = !!(navigator.canShare && navigator.canShare({files:[file]}));
+  const choices = [{label:'💾 이미지 저장'}];
+  if(canShare) choices.push({label:'📤 바로 공유하기', desc:'카카오톡·인스타그램 등으로 보내기'});
+  choices.push({label:'닫기'});
+  const i = await modal({title:'🖼️ 결과 이미지', html:`<img src="${url}" alt="인생 결과 이미지" style="width:100%;border-radius:12px;display:block">
+    <p class="muted" style="font-size:12.5px">휴대폰에서는 이미지를 길게 눌러 저장할 수도 있어요.</p>`, choices});
+  const pickd = choices[i].label;
+  if(pickd.includes('저장')){
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  } else if(pickd.includes('공유')){
+    try{ await navigator.share({files:[file], title:'프로게이머 키우기', text:S.shareText+'\nhttps://bsh0401.github.io/Web_Game/'}); }catch(e){}
   }
 }
 function copyResult(){
