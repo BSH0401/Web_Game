@@ -958,7 +958,7 @@ async function nationsCup(){
   await info('🌐 네이션스컵 국가대표 발탁!', `<p>나라 대항전 <b>네이션스컵</b> ${C.flag} ${C.name} ${GENRES[g].game} 대표로 뽑혔다!</p>`, 'win');
   const me=natTeam(), pool=shuffle(NATIONS.filter(x=>x!==C.name));
   S.fatigue=clamp(S.fatigue+10);
-  const stages=[['8강',ri(62,72)],['4강',ri(67,77)],['결승',ri(72,82)]];
+  const stages=[['8강',ri(63,73)],['4강',ri(68,78)],['결승',ri(74,84)]];
   for(let i=0;i<stages.length;i++){
     const [st,r]=stages[i];
     if(!(await featured({name:pool[i], rating:r}, `네이션스컵 ${st}`, 3, st==='결승'?4:2, me))){
@@ -1121,6 +1121,69 @@ const EVENTS = [
  {id:'rtsfold', once:true, cond:()=>S.genre==='rts'&&!!S.team&&S.meta.rts<.65, title:'📉 리그 축소 통보', text:()=>`${GENRES.rts.game} 리그 스폰서가 빠져나갔다. <b>${S.team.name}</b> 게임단이 해체된다.`, choices:[
    {label:'다른 장르로 전향한다', desc:'가장 재능 있는 장르로 새 출발', run:()=>{ const o=bestOther()||GKEYS.filter(g=>g!=='rts').reduce((a,b)=>S.apt[b]>S.apt[a]?b:a); hist(`${S.team.name} 해체`,'bad'); doSwitch(o); return `${GENRES[o].game}로 새 출발한다. 랭크부터 다시 시작이다.`; }},
    {label:'끝까지 남는다', run:()=>{ hist(`${S.team.name} 해체`,'bad'); S.team=null; S.tier=null; S.salaryMul=1; S.tryCool=S.turn+1; fx({mental:5,pop:4}); return '"마지막 RTS 선수" 팬들이 의리를 응원한다. 새 팀을 찾아야 한다.'; }}]},
+ // ===== 나라별 이벤트 =====
+ {id:'kr_pcbang', once:true, cond:()=>S.country==='KR'&&S.age<17&&!S.team, title:'🖥️ 단골 PC방 사장님', text:'단골 PC방 사장님이 "너 실력이면 프로 가겠다"며 후원을 제안했다.', choices:[
+   {label:'감사히 받는다', run:()=>{ fx({money:50,skill:2,mental:3}); hist('PC방 사장님의 후원','good'); return '구석 자리를 전용석으로 내주셨다. 연습할 맛이 난다!'; }},
+   {label:'정중히 사양한다', run:()=>{ fx({mental:2}); return '"마음만 받을게요." 더 열심히 해야겠다.'; }}]},
+ {id:'kr_lastfire', once:true, cond:()=>S.country==='KR'&&S.age===25&&S.tier==='1군'&&!S.flags.gold, title:'🔥 입대 전 마지막 불꽃', text:'내년이면 입영 통지가 온다. 남은 시간이 얼마 없다.', choices:[
+   {label:'모든 걸 쏟아붓는다', run:()=>{ fx({skill:5,fatigue:15,mental:4}); hist('입대 전 마지막 시즌 각오','key'); return '"후회 없이 하고 가자." 연습실 불이 꺼지지 않는다.'; }},
+   {label:'차분히 마음을 정리한다', run:()=>{ fx({mental:8,fatigue:-10}); return '조급함을 내려놓으니 오히려 플레이가 편해졌다.'; }}]},
+ {id:'cn_offer', cond:()=>S.country!=='CN'&&S.tier==='1군'&&!S.abroad&&['moba','br'].includes(S.genre)&&pw()>=60, title:'💴 중국 리그의 거액 오퍼', text:'중국 명문팀에서 연봉 3배를 제시했다. "당신이 필요합니다."', choices:[
+   {label:'중국으로 간다', run:()=>{ const from=S.team.name; const n=`${pick(COUNTRIES.CN.cities)} ${pick(['드래곤','타이거','피닉스','기린'])}`; S.team={name:n, rating:ri(74,85)}; S.abroad=true; S.salaryMul=3; S.teamBonus=0; S.seed=99; hist(`${from} → ${n} 중국 이적`,'key'); fx({mental:-4,pop:-3}); return `${n} 유니폼을 입었다. 연봉은 3배, 향수병은 덤이다.`; }},
+   {label:'남는다', run:()=>{ fx({pop:6,mental:2}); return '"돈보다 우리 팬들." 기사 댓글이 칭찬 일색이다.'; }}]},
+ {id:'jp_arcade', cond:()=>S.genre==='fight'||(S.country==='JP'&&!S.genre), title:'🕹️ 오락실의 전설', text:'오래된 오락실에 "무패의 할아버지"가 있다는 소문을 들었다.', choices:[
+   {label:'도전하러 간다', run:()=>{ if(chance(clamp((pw()-40)/40,.15,.8))){ fx({pop:5,mental:5,skill:2}); hist('오락실의 전설을 꺾다','good'); return '접전 끝에 승리! 할아버지가 웃으며 악수를 청했다.'; } fx({skill:4,mental:-2}); return '완패했다. 하지만 콤보 하나를 배워 왔다.'; }},
+   {label:'영상으로만 본다', run:()=>{ fx({macro:3}); return '프레임 단위로 분석했다. 배울 게 많다.'; }}]},
+ {id:'us_stream', once:true, cond:()=>S.country==='US'&&S.pop>=40, title:'📡 스트리밍 플랫폼 독점 계약', text:()=>`대형 스트리밍 플랫폼이 독점 방송 계약을 제안했다. (${won(S.pop*30)})`, choices:[
+   {label:'계약한다', run:()=>{ const m=Math.round(S.pop*30); S.earned+=m; fx({money:m,fatigue:12,pop:5}); hist('스트리밍 독점 계약','good'); return '계약금이 들어왔다. 대신 방송 시간이 꽤 늘었다.'; }},
+   {label:'자유롭게 방송한다', run:()=>{ fx({mental:3}); return '얽매이지 않는 게 좋다.'; }}]},
+ {id:'br_fans', cond:()=>S.country==='BR'&&S.tier==='1군', title:'🥁 열광적인 응원단', text:'팬들이 북과 깃발을 들고 경기장을 가득 메웠다!', choices:[
+   {label:'팬들에게 달려간다', run:()=>{ fx({mental:8,pop:5,fatigue:4}); return '함성이 온몸을 울린다. 오늘은 질 수가 없다!'; }}]},
+ {id:'de_uni', once:true, cond:()=>S.country==='DE'&&S.age>=18&&S.age<=20&&!S.team, title:'🎓 대학 합격 통지', text:'원서를 냈던 대학에서 합격 통지가 왔다. 부모님은 진학을 바라신다.', choices:[
+   {label:'대학과 게임을 병행한다', run:()=>{ fx({edu:15,fatigue:10,skill:-2}); hist('대학 진학','good'); return '수업과 연습을 오가며 바쁜 나날이 시작됐다.'; }},
+   {label:'게임에 올인한다', run:()=>{ fx({skill:3,mental:-3}); return '"1년만 더 해볼게요." 부모님 표정이 어둡다.'; }}]},
+ // ===== 장르별 이벤트 =====
+ {id:'fps_cheat', cond:()=>S.genre==='fps'&&S.pop>=15, title:'🕵️ 핵 의심 논란', text:'믿기 힘든 헤드샷 클립이 퍼지며 "핵 아니냐"는 의혹이 일었다.', choices:[
+   {label:'손 캠 켜고 공개 방송', run:()=>{ if(S.phys>=55){ fx({pop:9,mental:3}); hist('핵 의혹을 실력으로 정면 돌파','good'); return '손 캠 방송에서 똑같은 샷을 보여줬다. "진짜 사람 맞냐"는 반응!'; } fx({pop:-3,mental:-3}); return '긴장해서 평소 실력이 안 나왔다… 의혹이 완전히 가시진 않았다.'; }},
+   {label:'무시한다', run:()=>{ fx({pop:-5,mental:-3}); return '침묵하자 의혹이 사실처럼 퍼졌다.'; }}]},
+ {id:'rts_apm', cond:()=>S.genre==='rts', title:'⌨️ APM 400', text:'경기 중 내 APM(분당 조작 횟수)이 400을 넘었다는 그래프가 화제다.', choices:[
+   {label:'손 풀기 영상을 올린다', run:()=>{ fx({pop:5,fatigue:4}); return '"손이 안 보인다"는 댓글이 쏟아졌다.'; }},
+   {label:'손목 관리부터 한다', run:()=>{ fx({health:4,fatigue:-8}); return '빠른 손도 결국 손목이 버텨야 한다.'; }}]},
+ {id:'moba_patch', cond:()=>S.genre==='moba'&&!!S.team, title:'🩹 대규모 밸런스 패치', text:'주력으로 쓰던 영웅이 크게 너프됐다. 메타가 통째로 바뀐다.', choices:[
+   {label:'새 메타를 밤새 연구한다', run:()=>{ fx({macro:5,fatigue:10}); return '남들보다 먼저 새 메타를 찾아냈다!'; }},
+   {label:'원래 영웅을 고집한다', run:()=>{ if(chance(.4)){ fx({pop:6,skill:2}); return '너프에도 꺾이지 않는 장인 플레이로 화제가 됐다!'; } fx({teamBonus:-2,mental:-3}); return '확실히 예전 같지 않다… 팀도 고민에 빠졌다.'; }}]},
+ {id:'fight_combo', cond:()=>S.genre==='fight', title:'🎬 신기한 콤보 발견', text:'연습 모드에서 아무도 몰랐던 콤보 루트를 찾아냈다.', choices:[
+   {label:'영상으로 공개한다', run:()=>{ fx({pop:7}); return '격투 커뮤니티가 들썩였다. 내 이름을 딴 콤보가 생겼다!'; }},
+   {label:'대회까지 숨겨둔다', run:()=>{ fx({skill:4,mental:2}); return '비장의 무기 하나를 손에 넣었다.'; }}]},
+ {id:'br_third', cond:()=>S.genre==='br'&&S.tier!=='1군', title:'💰 서드파티 상금 대회', text:'인기 스트리머가 주최하는 상금 1,000만원 대회 초대장이 왔다.', choices:[
+   {label:'참가한다', run:()=>{ if(chance(clamp((pw()-35)/45,.1,.7))){ S.earned+=1000; fx({money:1000,pop:6,fatigue:10}); hist('서드파티 대회 우승','good'); return '마지막 원에서 치킨! 상금을 거머쥐었다.'; } fx({pop:2,fatigue:10}); return '아쉽게 5위. 그래도 얼굴을 알렸다.'; }},
+   {label:'연습에 집중한다', run:()=>{ fx({skill:2}); return '눈앞의 상금보다 실력이 먼저다.'; }}]},
+ // ===== 성장 단계별 이벤트 =====
+ {id:'academy', once:true, cond:()=>!S.team&&S.age<18&&S.money>=200, title:'🏫 게임 아카데미', text:'프로 출신 코치가 가르치는 게임 아카데미 광고를 봤다. (수강료 200만원)', choices:[
+   {label:'등록한다 (-200만원)', run:()=>{ fx({money:-200,skill:5,macro:4}); return '체계적인 피드백을 받으니 확실히 다르다.'; }},
+   {label:'독학한다', run:()=>{ fx({mental:2}); return '유튜브 강의로도 충분하다!'; }}]},
+ {id:'fake_scout', once:true, cond:()=>!S.team&&S.age>=16&&S.mmr[cg()]>=1400, title:'📩 수상한 스카우트', text:'"프로팀 입단 테스트를 보려면 등록비 100만원을 보내세요."라는 메시지가 왔다.', choices:[
+   {label:'돈을 보낸다', run:()=>{ fx({money:-100,mental:-6}); hist('입단 테스트 사기 피해','bad'); return '연락이 끊겼다… 사기였다. 진짜 프로팀은 돈을 받지 않는다.'; }},
+   {label:'무시하고 신고한다', run:()=>{ fx({mental:3}); return '알고 보니 유명한 사기 수법이었다. 피했다!'; }}]},
+ {id:'sub_chance', cond:()=>S.tier==='2군', title:'🚨 긴급 대타 출전', text:'1군 주전이 갑자기 아파서 오늘 경기에 대신 나가게 됐다!', choices:[
+   {label:'기회를 잡는다!', run:()=>{ if(chance(clamp((pw()-(teamRating()-14))/16,.15,.75))){ S.tier='1군'; S.wasPro=true; S.seed=99; hist(`대타 출전 맹활약으로 ${S.team.name} 1군 승격`,'key'); fx({pop:8,mental:6}); return '대타로 나가 POG! 감독이 바로 1군 주전으로 올렸다!'; } fx({mental:-3,skill:2}); return '긴장해서 실수가 많았다. 그래도 큰 무대를 경험했다.'; }}]},
+ {id:'dorm', once:true, cond:()=>!!S.team, title:'🏠 숙소 생활', text:'룸메이트의 코골이가 너무 심해서 며칠째 잠을 못 잤다.', choices:[
+   {label:'솔직하게 말한다', run:()=>{ fx({fatigue:-8,teamBonus:1}); return '룸메이트가 미안해하며 코골이 방지 테이프를 샀다. 웃음이 터졌다.'; }},
+   {label:'귀마개로 버틴다', run:()=>{ fx({fatigue:6,mental:-2}); return '피곤이 쌓인다…'; }}]},
+ {id:'mentor', cond:()=>S.tier==='1군'&&S.age>=24, title:'🤝 신인의 멘토', text:'팀에 들어온 신인이 나를 롤모델이라며 조언을 구한다.', choices:[
+   {label:'노하우를 전수한다', run:()=>{ fx({macro:3,mental:4,teamBonus:1}); return '가르치면서 나도 다시 배웠다.'; }},
+   {label:'"알아서 성장해"', run:()=>{ fx({mental:-1}); return '신인이 조금 서운해한다.'; }}]},
+ {id:'veteran', once:true, cond:()=>S.tier==='1군'&&S.age>=26, title:'🌅 베테랑의 고민', text:'손이 예전 같지 않다는 걸 느낀다. 구단은 코치직도 생각해 보라고 한다.', choices:[
+   {label:'아직 할 수 있다', run:()=>{ fx({mental:5}); return '"마지막 우승 하나만 더." 다시 마음을 다잡았다.'; }},
+   {label:'코치 공부를 시작한다', run:()=>{ fx({macro:8}); hist('코치 공부 시작','good'); return '경기를 보는 눈이 달라졌다. 은퇴 후가 기대된다.'; }}]},
+ {id:'back_pain', cond:()=>S.age>=23&&S.fatigue>=40&&S.injury===0, title:'🪑 허리 통증', text:'오래 앉아 있었더니 허리가 찌릿하다.', choices:[
+   {label:'재활 치료 (-100만원)', disabled:()=>S.money<100, run:()=>{ fx({money:-100,health:8,fatigue:-10}); return '꾸준히 스트레칭을 하니 한결 나아졌다.'; }},
+   {label:'참고 연습한다', run:()=>{ if(chance(.35)){ S.injury=1; hist('허리 부상','bad'); fx({phys:-2}); return '결국 허리를 삐끗했다. 한동안 쉬어야 한다.'; } fx({fatigue:5}); return '다행히 큰 문제는 없었다.'; }}]},
+ {id:'rival_game', cond:()=>!!S.genre&&!!S.flags.rival, title:'⚔️ 라이벌과의 맞대결', text:()=>`라이벌 '${S.rival}' 선수와의 경기가 다가온다. 언론이 둘을 비교하는 기사를 쏟아낸다.`, choices:[
+   {label:'도발에 응한다', run:()=>{ if(chance(clamp((pw()-50)/40,.2,.8))){ fx({pop:8,mental:6}); hist(`라이벌 ${S.rival} 선수에게 완승`,'good'); return `'${S.rival}' 선수를 완벽하게 눌렀다! "역시 이쪽이 한 수 위"라는 평이다.`; } fx({pop:2,mental:-5}); return `'${S.rival}' 선수에게 졌다. 분하다. 다음엔 반드시…`; }},
+   {label:'조용히 준비한다', run:()=>{ fx({skill:3}); return '말 대신 실력으로 보여주자.'; }}]},
+ {id:'fan_letter', cond:()=>S.pop>=20, title:'💌 팬레터', text:'"힘들 때 선수님 경기를 보며 버텼어요." 손편지 한 통이 도착했다.', choices:[
+   {label:'답장을 쓴다', run:()=>{ fx({mental:6,pop:2}); return '팬의 SNS에 답장 인증샷이 올라왔다.'; }}]},
  {id:'bday', cond:()=>S.pop>=35, title:'🎂 생일', text:'팬들이 지하철역에 생일 광고를 걸어줬다!', choices:[
    {label:'감동이다...', run:()=>{ fx({mental:8,pop:2}); return '인증샷을 올렸다. 더 열심히 해야겠다.'; }}]},
 ];
