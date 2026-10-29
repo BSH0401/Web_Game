@@ -49,3 +49,10 @@ GitHub Pages(Settings → Pages → main 브랜치)를 켜면 웹에서 바로 �
 4. 프로젝트 설정(톱니바퀴) → 일반 → 내 앱에서 **웹 앱(</>)** 을 추가하고, 표시되는 `projectId`와 `apiKey`를 `index.html`의 `const RANK = {...}`에 넣습니다.
 
 > apiKey는 웹에 공개되는 값이라 노출돼도 괜찮습니다. 데이터 보호는 `firestore.rules`가 담당합니다.
+
+## 건의함 → 구글 시트 자동 정리
+`tools/feedback-sheet/`의 Apps Script를 구글 시트에 붙여넣으면, 게임에서 들어온 건의·버그 제보가 5분마다 '건의함' 시트에 자동으로 추가됩니다.
+1. 새 구글 시트 → 확장 프로그램 → Apps Script
+2. 프로젝트 설정에서 `appsscript.json` 표시를 켜고, `appsscript.json`과 `Code.gs` 내용을 이 폴더의 파일로 바꿔 저장
+3. `setup` 함수를 한 번 실행하고 권한을 허용
+> 시트의 '파일 → 다운로드 → Microsoft Excel'로 언제든 엑셀 파일로 받을 수 있습니다.
