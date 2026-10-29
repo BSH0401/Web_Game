@@ -208,6 +208,18 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 .gcell.fam-0{border-color:#8a6d2a;background:linear-gradient(135deg,#2a2412,var(--panel2))}
 .gcell.fam-2{border-color:#5a4636}
 .gcell .v small{font-size:12.5px;font-weight:500}
+.tut-ic{font-size:44px;text-align:center;margin:4px 0 2px}
+.tut-steps{display:flex;justify-content:center;gap:6px;margin:4px 0 10px}
+.tut-steps i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.tut-steps i.on{background:var(--accent);width:22px;border-radius:9px}
+.tut-flow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin:10px 0}
+.tut-flow span{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:5px 9px;font-size:12.5px}
+.tut-flow b{color:var(--muted);font-weight:400}
+.tut-list{margin:8px 0;padding-left:18px;line-height:1.75;font-size:14px}
+.chg{margin:8px 0 12px}
+.chg h4{margin:0 0 4px;font-size:13px;color:var(--accent)}
+.chg ul{margin:0;padding-left:18px;line-height:1.7;font-size:14px}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:12.5px;padding:0}
 .countries{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
 .cbtn{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13.5px}
 .cbtn.on{border-color:var(--accent);background:#1b2440;color:#cfe0ff;font-weight:700}
@@ -290,7 +302,7 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border
 <div class="wrap">
   <header class="top">
     <h1 class="logo" style="margin:0">🎮 <span>프로게이머 키우기</span></h1>
-    <div class="hdr-btns"><div class="status" id="status"></div><button class="sbtn" onclick="showFeedback()">💬 건의·버그</button><button class="sbtn" onclick="showRanking()">🏆 랭킹</button></div>
+    <div class="hdr-btns"><div class="status" id="status"></div><button class="sbtn" onclick="showTutorial()">❓ 도움말</button><button class="sbtn" onclick="showFeedback()">💬 건의·버그</button><button class="sbtn" onclick="showRanking()">🏆 랭킹</button></div>
   </header>
 
   <!-- 시작 화면 -->
@@ -1550,6 +1562,55 @@ async function submitRank(){
   }
 }
 
+/* ================= 첫 플레이 안내 / 업데이트 소식 ================= */
+const TUTORIAL = [
+  {ic:'🎮', t:'프로게이머 키우기에 오신 걸 환영해요!', h:`
+    <p>게임을 사랑하는 <b>14살</b>로 태어나, 최대 <b>29살 은퇴</b>까지 프로게이머의 인생을 살아요.</p>
+    <p>목표는 <b>프로 데뷔 → 리그 우승 → 월드 챔피언</b>! 은퇴하면 칭호와 인생 점수가 나와요.</p>
+    <p class="muted">1턴은 3개월(1분기)이에요. 1년에 4번 행동을 고를 수 있어요.</p>`},
+  {ic:'🎯', t:'매 턴 행동을 하나 골라요', h:`
+    <ul class="tut-list"><li><b>훈련</b>: 랭크·팀 연습·전략 분석·운동으로 실력을 키워요</li>
+    <li><b>관리</b>: 휴식으로 피로를 풀고, 방송으로 인기와 돈을 벌어요</li>
+    <li>😵 <b>피로가 70을 넘으면</b> 슬럼프나 손목 부상이 올 수 있어요. 틈틈이 쉬세요!</li></ul>`},
+  {ic:'📈', t:'프로가 되는 길', h:`
+    <div class="tut-flow"><span>🔍 여러 장르 랭크로<br>재능(별점) 찾기</span><b>→</b><span>🎯 16살<br>주력 장르 결정</span><b>→</b>
+      <span>📞 다이아 달성 시<br>프로팀 스카우트</span><b>→</b><span>⬆️ 2군에서<br>1군 승격</span><b>→</b><span>🏆 리그 우승<br>→ 🌍 월드</span></div>
+    <p class="muted">화면 위쪽 <b>목표 박스</b>가 지금 해야 할 일을 알려줘요. 그대로 따라가면 돼요.</p>`},
+  {ic:'⭐', t:'알아두면 좋은 것', h:`
+    <ul class="tut-list"><li>⭐ <b>특수훈련</b>은 인생에 5번만! 결정적인 순간에 쓰세요</li>
+    <li>🏟️ 중요한 경기에서는 <b>작전</b>을 직접 골라요 (고위험·안정형·심리전)</li>
+    <li>🏅 1군에서 잘하면 <b>국가대표</b>로 아시안게임·네이션스컵에 나가요</li>
+    <li>🇰🇷 한국은 26살에 입영 통지가 와요. <b>아시안게임 금메달</b>이면 병역 특례!</li></ul>
+    <p class="muted">이 안내는 오른쪽 위 <b>❓ 도움말</b>에서 언제든 다시 볼 수 있어요.</p>`},
+];
+async function showTutorial(){
+  const wasBusy=busy; busy=true;
+  for(let i=0;i<TUTORIAL.length;i++){
+    const T=TUTORIAL[i], last=i===TUTORIAL.length-1;
+    const k = await modal({title:T.t, html:`<div class="tut-steps">${TUTORIAL.map((_,j)=>`<i class="${j===i?'on':''}"></i>`).join('')}</div>
+      <div class="tut-ic">${T.ic}</div>${T.h}`,
+      choices: last ? [{label:'🎮 시작하기!'}] : [{label:'다음 ▶'},{label:'건너뛰기'}]});
+    if(!last && k===1) break;
+  }
+  storeSet('pg_tut', 1);
+  busy=wasBusy; if(S && !S.ended) render();
+}
+const CHANGELOG = [
+  {v:'2026-10-29', items:['🖼️ 결과 이미지 저장·공유 (카카오톡·인스타그램)','📘 첫 플레이 안내와 ❓ 도움말','🎲 나라·장르별 새 이벤트 20여 종']},
+  {v:'2026-10-25', items:['🌏 국적 선택 (한국·중국·일본·미국·독일·브라질)','🏅 아시안게임 · 🌐 네이션스컵 국가대표','🪖 한국 병역 (아시안게임 금메달 시 특례)','🎬 은퇴 커리어 회고 연출','⭐ 특수훈련 · 🏆 온라인 랭킹 · 💬 건의·버그 제보','🎨 화면 전체 개편']},
+];
+function showUpdates(){
+  const html = CHANGELOG.map(c=>`<div class="chg"><h4>${c.v}</h4><ul>${c.items.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');
+  storeSet('pg_ver', CHANGELOG[0].v);
+  return modal({title:'📢 업데이트 소식', html:`<p class="muted" style="margin-top:0">새로 추가된 것들이에요!</p>${html}`, choices:[{label:'확인'}]});
+}
+function maybeShowUpdates(){
+  const latest=CHANGELOG[0].v, seen=storeGet('pg_ver');
+  const returning = seen || storeGet('pg_save') || storeGet('pg_records') || storeGet('pg_best');
+  if(!returning){ storeSet('pg_ver', latest); return; }   // 처음 온 사람은 안내로 대신
+  if(seen!==latest) showUpdates();
+}
+
 /* ================= 시작 화면 ================= */
 function showStart(){
   const r=roll, t=r.talent;
@@ -1593,7 +1654,8 @@ function showStart(){
       <button class="ghost" onclick="reroll()" ${rerolls<=0?'disabled style="opacity:.4"':''}>🎲 다시 뽑기 (${rerolls})</button>
       ${saved&&!saved.ended?`<button class="ghost" onclick="loadGame()">▶ 이어하기 (${esc(saved.name)}, ${saved.age}세)</button>`:''}
     </div>
-    <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA·FPS·RTS·격투·배틀로얄 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!<br>⭐ 특수훈련은 인생에 5번만 쓸 수 있어요. 결정적인 순간에 쓰세요!</p>`;
+    <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA·FPS·RTS·격투·배틀로얄 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!<br>⭐ 특수훈련은 인생에 5번만 쓸 수 있어요. 결정적인 순간에 쓰세요!</p>
+    <p style="margin:6px 0 0"><button class="linkbtn" onclick="showUpdates()">📢 업데이트 소식 (${CHANGELOG[0].v})</button> · <button class="linkbtn" onclick="showTutorial()">❓ 게임 방법</button></p>`;
 }
 function setCountry(k){ selCountry=k; storeSet('pg_country',k); const n=$('#nick')?$('#nick').value:''; showStart(); $('#nick').value=n; }
 function reroll(){ if(rerolls<=0) return; rerolls--; roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; $('#gacha').classList.add('flip'); }
@@ -1604,6 +1666,7 @@ function startGame(){
   log(`🍼 ${roll.family.emoji} ${roll.family.name} 출신 ${esc(name)}의 게이머 인생이 시작됐다!`,'','key');
   $('#start').classList.add('hide'); $('#game').classList.remove('hide');
   lastLogShown=null; render(); save(); window.scrollTo(0,0);
+  if(!storeGet('pg_tut')) showTutorial();
 }
 function attachMeta(){
   S.meta = {...META0, ...(S.meta||{})};
@@ -1732,6 +1795,7 @@ async function chooseGenreBtn(){ if(busy) return; busy=true; await chooseGenre(f
 /* ================= 시작 ================= */
 roll = rollBirth();
 showStart();
+setTimeout(maybeShowUpdates, 400);
 </script>
 </body>
 </html>
