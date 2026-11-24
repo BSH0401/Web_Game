@@ -24,11 +24,9 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"VideoGame","name":"프로게이머 키우기","url":"https://bsh0401.github.io/Web_Game/","description":"MOBA·FPS·RTS·격투·배틀로얄 중 장르를 골라 프로게이머 인생을 키우는 무료 웹 인생 시뮬레이션 게임","genre":["Simulation","Life simulation"],"gamePlatform":"Web browser","applicationCategory":"Game","inLanguage":"ko","offers":{"@type":"Offer","price":"0","priceCurrency":"KRW"}}
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- 윈도우는 국기 이모지를 지원하지 않아서, 국기 글자만 담은 폰트를 불러온다 -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap&text=%F0%9F%87%B0%F0%9F%87%B7%F0%9F%87%A8%F0%9F%87%B3%F0%9F%87%AF%F0%9F%87%B5%F0%9F%87%BA%F0%9F%87%B8%F0%9F%87%A9%F0%9F%87%AA%F0%9F%87%A7%F0%9F%87%B7">
 <style>
+/* 윈도우는 국기 이모지를 지원하지 않아서 국기 글자(지역 표시 문자)만 담은 폰트를 쓴다. 고유 이름이라 숫자 등 다른 글자에는 쓰이지 않는다 */
+@font-face{font-family:"PG Flags";src:url("fonts/flags.woff2") format("woff2");unicode-range:U+1F1E6-1F1FF;font-display:swap}
 :root{
   --bg:#0c0f16; --panel:#151a25; --panel2:#1c2231; --line:#2a3246;
   --text:#e9edf5; --muted:#8b95aa; --accent:#4f8cff; --accent2:#a46bff;
@@ -36,7 +34,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);
-  font-family:"Noto Color Emoji",system-ui,-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;font-size:15px;line-height:1.5}
+  font-family:"PG Flags",system-ui,-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;font-size:15px;line-height:1.5}
 button{font:inherit;color:inherit;cursor:pointer}
 .wrap{max-width:1120px;margin:0 auto;padding:16px}
 header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
@@ -1730,7 +1728,7 @@ function showEnding(){
 /* ================= 결과 이미지 (공유용) ================= */
 function rrect(x, X, Y, W, H, r){ x.beginPath(); x.moveTo(X+r,Y); x.arcTo(X+W,Y,X+W,Y+H,r); x.arcTo(X+W,Y+H,X,Y+H,r); x.arcTo(X,Y+H,X,Y,r); x.arcTo(X,Y,X+W,Y,r); x.closePath(); }
 function fitFont(x, text, weight, size, maxW){ const F=SHARE_FONT; do{ x.font=`${weight} ${size}px ${F}`; size-=2; }while(x.measureText(text).width>maxW && size>18); }
-const SHARE_FONT = '"Noto Color Emoji", system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+const SHARE_FONT = '"PG Flags", system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
 async function makeShareImage(){
   const {title, sub, score} = S.endInfo;
   const W=1080, H=1350, c=document.createElement('canvas'); c.width=W; c.height=H;
@@ -1991,16 +1989,19 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
-  {v:'2026-11-26.2', items:['📢 게임 중에 업데이트가 나오면, 게임이 끝난 뒤 알려줘요','🔧 게임 개선을 위한 익명 방문 통계']},
-  {v:'2026-11-26', items:['📅 오늘의 시드: 매일 모두가 같은 조건·같은 운으로 도전','📅 오늘의 랭킹 탭과 결과 이미지 날짜 표시','🏅 업적 「오늘의 도전자」 추가']},
-  {v:'2026-11-25', items:['🔥 살아 움직이는 라이벌: 함께 성장하고 입단·우승·은퇴까지','⚔️ 라이벌 더비와 결승 맞대결, 상대전적','📰 라이벌 소식 뉴스, 회고·엔딩의 나 vs 라이벌 비교','🏅 라이벌 업적 2종 추가']},
-  {v:'2026-11-24', items:['🏅 업적 30종 (커리어·도전·수집·재미)','📚 도감: 엔딩·칭호·이벤트 모으기','🔔 게임 중 업적 달성 알림']},
-  {v:'2026-10-29', items:['🖼️ 결과 이미지 저장·공유 (카카오톡·인스타그램)','📘 첫 플레이 안내와 ❓ 도움말','🎲 나라·장르별 새 이벤트 20여 종']},
-  {v:'2026-10-25', items:['🌏 국적 선택 (한국·중국·일본·미국·독일·브라질)','🏅 아시안게임 · 🌐 네이션스컵 국가대표','🪖 한국 병역 (아시안게임 금메달 시 특례)','🎬 은퇴 커리어 회고 연출','⭐ 특수훈련 · 🏆 온라인 랭킹 · 💬 건의·버그 제보','🎨 화면 전체 개편']},
+  {b:7, d:'2026-11-24', items:['🔤 일부 기기에서 숫자 글꼴이 이상하게 보이던 문제 수정']},
+  {b:6, d:'2026-11-24', items:['📢 게임 중에 업데이트가 나오면, 게임이 끝난 뒤 알려줘요','🔧 게임 개선을 위한 익명 방문 통계']},
+  {b:5, d:'2026-11-24', items:['📅 오늘의 시드: 매일 모두가 같은 조건·같은 운으로 도전','📅 오늘의 랭킹 탭과 결과 이미지 날짜 표시','🏅 업적 「오늘의 도전자」 추가']},
+  {b:4, d:'2026-11-24', items:['🔥 살아 움직이는 라이벌: 함께 성장하고 입단·우승·은퇴까지','⚔️ 라이벌 더비와 결승 맞대결, 상대전적','📰 라이벌 소식 뉴스, 회고·엔딩의 나 vs 라이벌 비교','🏅 라이벌 업적 2종 추가']},
+  {b:3, d:'2026-11-24', items:['🏅 업적 30종 (커리어·도전·수집·재미)','📚 도감: 엔딩·칭호·이벤트 모으기','🔔 게임 중 업적 달성 알림']},
+  {b:2, d:'2026-10-29', items:['🖼️ 결과 이미지 저장·공유 (카카오톡·인스타그램)','📘 첫 플레이 안내와 ❓ 도움말','🎲 나라·장르별 새 이벤트 20여 종']},
+  {b:1, d:'2026-10-25', items:['🌏 국적 선택 (한국·중국·일본·미국·독일·브라질)','🏅 아시안게임 · 🌐 네이션스컵 국가대표','🪖 한국 병역 (아시안게임 금메달 시 특례)','🎬 은퇴 커리어 회고 연출','⭐ 특수훈련 · 🏆 온라인 랭킹 · 💬 건의·버그 제보','🎨 화면 전체 개편']},
 ];
+const BUILD = CHANGELOG[0].b;   // 패치할 때마다 CHANGELOG 맨 앞에 b를 1 올린 항목을 넣고, version.json도 같은 build로 맞춘다
 function showUpdates(){
-  const html = CHANGELOG.map(c=>`<div class="chg"><h4>${c.v}</h4><ul>${c.items.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');
-  storeSet('pg_ver', CHANGELOG[0].v);
+  const days=[...new Set(CHANGELOG.map(c=>c.d))];   // 같은 날 패치는 한 묶음으로
+  const html = days.map(d=>`<div class="chg"><h4>${d}</h4><ul>${CHANGELOG.filter(c=>c.d===d).flatMap(c=>c.items).map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');
+  storeSet('pg_build', BUILD);
   return modal({title:'📢 업데이트 소식', html:`<p class="muted" style="margin-top:0">새로 추가된 것들이에요!</p>${html}`, choices:[{label:'확인'}]});
 }
 /* ================= 접속 통계 (날짜별 숫자만, 익명) ================= */
@@ -2028,22 +2029,22 @@ async function checkNewVersion(){
     const r = await fetch(`version.json?t=${Date.now()}`, {cache:'no-store'});
     if(!r.ok) return;
     const j = await r.json();
-    if(!j.v || j.v <= CHANGELOG[0].v || storeGet('pg_newver_shown') === j.v) return;
+    if(!j.build || j.build <= BUILD || storeGet('pg_newver_shown') === j.build) return;
     if((S && !S.ended) || $('#modal').classList.contains('show')) return;
-    storeSet('pg_newver_shown', j.v);
-    const i = await modal({title:'📢 새 업데이트가 나왔어요!', html:`<p class="muted" style="margin-top:0">${esc(j.v)}</p>
+    storeSet('pg_newver_shown', j.build);
+    const i = await modal({title:'📢 새 업데이트가 나왔어요!', html:`<p class="muted" style="margin-top:0">${esc(j.d||'')}</p>
       <ul class="tut-list">${(j.items||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
       <p class="muted">새로고침하면 바로 적용돼요. 진행 기록과 도감은 그대로 남아요.</p>`,
       choices:[{label:'🔄 지금 새로고침'},{label:'나중에'}]});
-    if(i===0){ storeSet('pg_ver', j.v); location.reload(); }
+    if(i===0){ storeSet('pg_build', j.build); location.reload(); }
   }catch(e){}
 }
 
 function maybeShowUpdates(){
-  const latest=CHANGELOG[0].v, seen=storeGet('pg_ver');
-  const returning = seen || storeGet('pg_save') || storeGet('pg_records') || storeGet('pg_best');
-  if(!returning){ storeSet('pg_ver', latest); return; }   // 처음 온 사람은 안내로 대신
-  if(seen!==latest) showUpdates();
+  const seen=storeGet('pg_build');
+  const returning = seen || storeGet('pg_ver') || storeGet('pg_save') || storeGet('pg_records') || storeGet('pg_best');
+  if(!returning){ storeSet('pg_build', BUILD); return; }   // 처음 온 사람은 안내로 대신
+  if(seen!==BUILD) showUpdates();
 }
 
 /* ================= 오늘의 시드 ================= */
@@ -2110,7 +2111,7 @@ function showStart(){
       ${saved&&!saved.ended?`<button class="ghost" onclick="loadGame()">▶ 이어하기 (${esc(saved.name)}, ${saved.age}세)</button>`:''}
     </div>
     <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA·FPS·RTS·격투·배틀로얄 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!<br>⭐ 특수훈련은 인생에 5번만 쓸 수 있어요. 결정적인 순간에 쓰세요!</p>
-    <p style="margin:6px 0 0"><button class="linkbtn" onclick="showUpdates()">📢 업데이트 소식 (${CHANGELOG[0].v})</button> · <button class="linkbtn" onclick="showTutorial()">❓ 게임 방법</button></p>`;
+    <p style="margin:6px 0 0"><button class="linkbtn" onclick="showUpdates()">📢 업데이트 소식 (${CHANGELOG[0].d})</button> · <button class="linkbtn" onclick="showTutorial()">❓ 게임 방법</button></p>`;
 }
 function setCountry(k){ selCountry=k; storeSet('pg_country',k); const n=$('#nick')?$('#nick').value:''; showStart(); $('#nick').value=n; }
 function reroll(){ if(rerolls<=0) return; rerolls--; roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; $('#gacha').classList.add('flip'); }
