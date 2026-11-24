@@ -326,7 +326,7 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border
 <div class="wrap">
   <header class="top">
     <h1 class="logo" style="margin:0">🎮 <span>프로게이머 키우기</span></h1>
-    <div class="hdr-btns"><div class="status" id="status"></div><button class="sbtn" onclick="showCollection()">📚 도감</button><button class="sbtn" onclick="showTutorial()">❓ 도움말</button><button class="sbtn" onclick="showFeedback()">💬 건의·버그</button><button class="sbtn" onclick="showRanking()">🏆 랭킹</button></div>
+    <div class="hdr-btns"><div class="status" id="status"></div><button class="sbtn" id="sndBtn" onclick="toggleSound()" title="효과음 끄기">🔊</button><button class="sbtn" onclick="showCollection()">📚 도감</button><button class="sbtn" onclick="showTutorial()">❓ 도움말</button><button class="sbtn" onclick="showFeedback()">💬 건의·버그</button><button class="sbtn" onclick="showRanking()">🏆 랭킹</button></div>
   </header>
 
   <!-- 시작 화면 -->
@@ -614,6 +614,50 @@ function hist(text,type='key'){ S.history.push({age:S.age,q:S.q,text,type}); }
 function log(text, chips='', type=''){ S.logSeq=(S.logSeq||0)+1; S.log.unshift({id:S.logSeq, when:`${S.age}세 ${S.q+1}분기`, text, chips, type}); if(S.log.length>80) S.log.pop(); }
 
 /* ================= 모달 ================= */
+/* ================= 효과음 (파일 없이 브라우저에서 합성) ================= */
+const SFX = (() => {
+  let ctx = null, master = null;
+  let on = storeGet('pg_sound') !== 0;
+  function ac(){
+    if(!ctx){ const C = window.AudioContext || window.webkitAudioContext; if(!C) return null;
+      ctx = new C(); master = ctx.createGain(); master.gain.value = .55; master.connect(ctx.destination); }
+    if(ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  // 음 하나: 주파수, 길이, 파형, 크기, 시작 지연, 끝 주파수(미끄러지기)
+  function tone(f, dur, {type='sine', vol=.18, at=0, to=null}={}){
+    const c = ac(); if(!c) return;
+    const t = c.currentTime + at, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if(to) o.frequency.exponentialRampToValueAtTime(to, t+dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t+.012); g.gain.exponentialRampToValueAtTime(.0001, t+dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+dur+.03);
+  }
+  const notes = (list, gap, opt) => list.forEach((f,i)=>tone(f, opt.dur||.18, {...opt, at:i*gap}));
+  const S_ = {
+    click:   () => tone(1200, .035, {type:'triangle', vol:.05}),
+    win:     () => notes([523, 659, 784, 1047], .08, {type:'triangle', vol:.16, dur:.22}),
+    lose:    () => notes([392, 330, 262], .12, {type:'sine', vol:.14, dur:.28}),
+    chime:   () => notes([784, 1175], .09, {type:'sine', vol:.14, dur:.35}),
+    fanfare: () => { notes([523, 523, 659, 784], .11, {type:'square', vol:.07, dur:.16}); notes([1047, 1319, 1568], .13, {type:'triangle', vol:.13, dur:.5, at:0}); tone(784, .9, {type:'triangle', vol:.1, at:.5}); },
+    ach:     () => notes([1319, 1568, 2093, 2637], .06, {type:'sine', vol:.1, dur:.3}),
+    event:   () => tone(660, .4, {type:'sine', vol:.1, to:880}),
+    mystic:  () => { notes([523, 659, 831, 1047, 1319], .09, {type:'sine', vol:.09, dur:.6}); tone(262, 1.2, {type:'triangle', vol:.06}); },
+    bad:     () => { tone(140, .35, {type:'sawtooth', vol:.09, to:70}); tone(90, .4, {type:'sine', vol:.16, to:50}); },
+    swoosh:  () => tone(300, .25, {type:'sine', vol:.07, to:1200}),
+    roll:    () => [0,1,2,3,4,5].forEach(i=>tone(500+i*90, .05, {type:'triangle', vol:.06, at:i*.045})),
+  };
+  return {
+    play(n){ if(!on) return; try{ S_[n] && S_[n](); }catch(e){} },
+    get on(){ return on; },
+    toggle(){ on = !on; storeSet('pg_sound', on ? 1 : 0); if(on){ ac(); S_.chime(); } return on; },
+  };
+})();
+function soundBtnLabel(){ return SFX.on ? '🔊' : '🔇'; }
+function toggleSound(){ SFX.toggle(); const b=$('#sndBtn'); if(b){ b.textContent=soundBtnLabel(); b.title = SFX.on ? '효과음 끄기' : '효과음 켜기'; } showToast(SFX.on ? '🔊 효과음을 켰어요' : '🔇 효과음을 껐어요'); }
+// 버튼을 누를 때 가벼운 소리
+document.addEventListener('click', e=>{ const b=e.target.closest('button'); if(b && !b.disabled && b.id!=='sndBtn') SFX.play('click'); }, true);
+
 // 바깥 클릭·Esc로 닫아도 되는 창인지: 버튼이 하나뿐이거나, 마지막 버튼이 '닫기·취소·나중에' 같은 빠져나가기 버튼일 때만
 const CLOSE_WORDS = /^(닫기|취소|나중에|아직 아니다|건너뛰기)$/;
 let modalDismiss = null;   // 바깥 클릭 시 실행할 함수 (null이면 꼭 골라야 하는 창)
@@ -624,6 +668,12 @@ function modal({title, html='', choices=[{label:'확인'}], kind=''}){
     const dIdx = choices.length===1 ? 0 : CLOSE_WORDS.test(plain(choices[last].label)) && !choices[last].disabled ? last : -1;
     modalDismiss = dIdx<0 ? null : () => { $('#modal').classList.remove('show'); modalDismiss=null; res(dIdx); };
     $('#modal .modal').dataset.kind = kind;
+    if(/^🏆 승리/.test(title)) SFX.play('win');
+    else if(/^💀 패배/.test(title)) SFX.play('lose');
+    else if(kind==='hidden' && choices.length>1) SFX.play('mystic');
+    else if(kind==='event' && choices.length>1) SFX.play('event');
+    else if(kind==='win') SFX.play(/우승|세계 정상|금메달/.test(title) ? 'fanfare' : 'chime');
+    else if(kind==='lose') SFX.play('bad');
     $('#mTitle').textContent = title;
     $('#mBody').innerHTML = html;
     const box = $('#mChoices'); box.innerHTML='';
@@ -1557,6 +1607,7 @@ function showRecap(){
         <div class="rc-slide">${sl.html}</div>
         ${sl.final?'':'<div class="rc-hint">화면을 누르면 다음으로</div>'}`;
       if(sl.counts) runCounts(el);
+      SFX.play(sl.final ? 'fanfare' : 'swoosh');
       if(!sl.final) timer=setTimeout(next, sl.ms);
     };
     const next = () => { if(idx<slides.length-1){ idx++; show(idx); } };
@@ -1645,7 +1696,7 @@ function achToast(a){
   achToastQ.push(a);
   if(achToastQ.length>1) return;
   const next = () => { const x=achToastQ[0]; if(!x) return;
-    showToast(`🏅 <b>업적 달성!</b> ${x.ic} ${x.name}<div class="muted" style="font-size:12px">${x.desc}</div>`);
+    SFX.play('ach'); showToast(`🏅 <b>업적 달성!</b> ${x.ic} ${x.name}<div class="muted" style="font-size:12px">${x.desc}</div>`);
     setTimeout(()=>{ achToastQ.shift(); next(); }, 2800); };
   setTimeout(next, 1200);
 }
@@ -2080,6 +2131,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {b:10, d:'2026-11-24', items:['🔊 효과음 추가: 승리·패배·우승 팡파르·업적·이벤트·히든 이벤트 등','🔇 오른쪽 위 버튼으로 효과음을 끄고 켤 수 있어요']},
   {b:9, d:'2026-11-24', items:['🖱️ 팝업 바깥을 누르거나 Esc를 누르면 닫혀요 (꼭 골라야 하는 선택 창은 제외)']},
   {b:8, d:'2026-11-24', items:['✨ 히든 이벤트 9종: 아주 드물게 일어나는 특별한 순간','🗝️ 히든 엔딩 6종: 조건을 만족하면 은퇴 때 특별한 길이 열려요','📚 도감에 히든 칸 추가, 히든 업적 2종']},
   {b:7, d:'2026-11-24', items:['🔤 일부 기기에서 숫자 글꼴이 이상하게 보이던 문제 수정']},
@@ -2207,7 +2259,7 @@ function showStart(){
     <p style="margin:6px 0 0"><button class="linkbtn" onclick="showUpdates()">📢 업데이트 소식 (${CHANGELOG[0].d})</button> · <button class="linkbtn" onclick="showTutorial()">❓ 게임 방법</button></p>`;
 }
 function setCountry(k){ selCountry=k; storeSet('pg_country',k); const n=$('#nick')?$('#nick').value:''; showStart(); $('#nick').value=n; }
-function reroll(){ if(rerolls<=0) return; rerolls--; roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; $('#gacha').classList.add('flip'); }
+function reroll(){ if(rerolls<=0) return; rerolls--; SFX.play('roll'); roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; $('#gacha').classList.add('flip'); }
 function startGame(){
   const name = ($('#nick').value.trim() || pick(['새싹','손가락천재','키보드워리어','에임봇','갓겜러'])).slice(0,12);
   if(playMode==='daily'){
@@ -2353,6 +2405,7 @@ async function chooseGenreBtn(){ if(busy) return; busy=true; await chooseGenre(f
 /* ================= 시작 ================= */
 roll = rollBirth();
 showStart();
+$('#sndBtn').textContent = soundBtnLabel(); $('#sndBtn').title = SFX.on ? '효과음 끄기' : '효과음 켜기';
 trackVisit();
 setTimeout(maybeShowUpdates, 400);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkNewVersion(); });
