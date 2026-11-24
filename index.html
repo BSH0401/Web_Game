@@ -197,6 +197,9 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 @keyframes slidein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .modal[data-kind=match]{border-color:var(--accent)}
 .modal[data-kind=event]{border-color:#4a3a73}
+.modal[data-kind=hidden]{border-color:#c9a2ff;box-shadow:0 0 50px rgba(201,162,255,.28);background:linear-gradient(160deg,#1e1730,var(--panel))}
+.hiddentag{display:inline-block;font-size:12px;color:#e4cfff;background:#2c2048;border:1px solid #6b4fa8;border-radius:999px;padding:2px 10px;margin:2px 0 6px}
+.pill.hidp{border-color:#c9a2ff;color:#e4cfff}
 .modal[data-kind=win]{border-color:var(--gold);box-shadow:0 0 40px rgba(255,209,102,.16)}
 .modal[data-kind=lose]{border-color:#5a2a33}
 .hero{display:flex;gap:14px;align-items:center;margin-bottom:4px}
@@ -763,6 +766,8 @@ async function endOfTurn(){
   }
   // 랜덤 이벤트
   if(chance(.55)) await randomEvent();
+  if(!S.ended) await hiddenEvent();
+  if(!S.ended && S.flags.forceRetire){ S.flags.forceRetire=false; await retire(); }
   if(S.ended) return;
   // 시간 흐름
   S.turn++; S.q++;
@@ -1341,6 +1346,50 @@ const EVENTS = [
  {id:'bday', cond:()=>S.pop>=35, title:'🎂 생일', text:'팬들이 지하철역에 생일 광고를 걸어줬다!', choices:[
    {label:'감동이다...', run:()=>{ fx({mental:8,pop:2}); return '인증샷을 올렸다. 더 열심히 해야겠다.'; }}]},
 ];
+/* ================= 히든 이벤트 (아주 드물게) ================= */
+// p: 조건을 만족하는 분기마다 일어날 확률. 같은 인생에서 한 번만.
+const HIDDEN = [
+ {id:'h_bug', p:.004, cond:()=>!S.team&&S.age>=15&&S.age<=19, title:'🐛 버그 발견', text:'랭크 도중, 벽을 뚫고 지나가는 버그를 발견했다. 이걸 쓰면 무조건 이긴다…', choices:[
+   {label:'개발사에 제보한다', run:()=>{ S.flags.bugReport=true; fx({mental:5,pop:3}); hist('게임 버그를 개발사에 제보','key'); return '개발사에서 감사 메일과 한정판 스킨이 왔다. "언젠가 같이 일해요!"'; }},
+   {label:'몰래 써먹는다', run:()=>{ if(chance(.5)){ fx({mmr:400}); return '랭크 점수가 폭등했다! …아무도 눈치채지 못한 것 같다.'; } fx({mmr:-600,pop:-8,mental:-6}); hist('버그 악용으로 계정 정지','bad'); return '들켰다. 계정 정지에 커뮤니티 박제까지…'; }}]},
+ {id:'h_dev', p:.06, cond:()=>!!S.flags.bugReport&&S.age>=20, title:'📧 개발사의 러브콜', text:'예전에 버그를 제보했던 개발사에서 연락이 왔다. "우리 게임의 밸런스 디자이너가 되어 주세요."', choices:[
+   {label:'게임 개발자로 새 인생을 시작한다', run:()=>{ S.flags.devOpen=true; S.flags.hiddenCareer='dev'; S.flags.forceRetire=true; hist('선수 은퇴, 게임 개발사 입사','key'); return '키보드 대신 기획서를 잡았다. 새로운 인생의 시작이다.'; }},
+   {label:'선수 생활을 계속한다', run:()=>{ S.flags.devOpen=true; fx({mental:3}); return '"은퇴하면 꼭 연락드릴게요." 명함을 지갑 깊숙이 넣었다.'; }}]},
+ {id:'h_legend', p:.004, cond:()=>S.tier==='1군'&&S.age>=20&&pw()>=65, title:'🗿 전설의 은퇴 경기', text:'전설적인 선수가 은퇴 경기 상대로 당신을 지목했다. "내 마지막 상대는 너여야 해."', choices:[
+   {label:'전력으로 맞선다', run:()=>{ if(chance(clamp((pw()-55)/40,.2,.85))){ S.flags.beatLegend=true; fx({pop:15,mental:8}); hist('전설의 은퇴 경기에서 승리','key'); return '전설을 꺾었다! 그가 웃으며 마이크를 건넸다. "이제 네 시대다."'; } fx({pop:8,mental:3}); hist('전설의 은퇴 경기 출전','good'); return '전설은 역시 전설이었다. 경기 후 그가 어깨를 두드렸다. "좋은 승부였다."'; }},
+   {label:'예우를 갖춰 져준다', run:()=>{ fx({pop:5,mental:5}); return '관중이 기립박수를 보냈다. 전설이 작게 말했다. "다음엔 진심으로 와라."'; }}]},
+ {id:'h_lottery', p:.0008, cond:()=>S.age>=18, title:'🎰 복권 1등', text:'심심풀이로 산 복권이… 1등에 당첨됐다! (5억원)', choices:[
+   {label:'은퇴하고 건물주가 된다', run:()=>{ S.money+=50000; S.flags.hiddenCareer='owner'; S.flags.forceRetire=true; hist('복권 1등 당첨, 건물주로 은퇴','key'); return '"게임은 이제 취미로 할게." 건물 계약서에 사인했다.'; }},
+   {label:'돈은 돈, 꿈은 꿈', run:()=>{ S.money+=50000; fx({mental:10}); hist('복권 1등 당첨','key'); return '통장은 든든해졌지만, 아직 이루지 못한 꿈이 있다.'; }}]},
+ {id:'h_ai', p:.004, cond:()=>S.tier==='1군'&&pw()>=70, title:'🤖 AI와의 대결', text:'세계적인 AI 연구소가 인간 최강자와 AI의 공개 대결을 제안했다.', choices:[
+   {label:'인류 대표로 나선다', run:()=>{ S.flags.aiMatch=true; if(chance(clamp((pw()-60)/45,.15,.7))){ S.flags.aiWin=true; fx({pop:25,mental:10}); hist('AI와의 대결에서 승리 — 인류 대표','key'); return '전 세계가 지켜보는 가운데 AI를 꺾었다! "인간은 아직 끝나지 않았다."'; } fx({pop:10}); hist('AI와의 대결에서 석패','good'); return 'AI의 완벽한 플레이에 졌다. 연구소는 당신의 플레이를 "가장 인간다운 데이터"라고 평가했다.'; }},
+   {label:'거절한다', run:()=>{ fx({mental:2}); return '"저는 사람이랑 하는 게임이 좋아요."'; }}]},
+ {id:'h_movie', p:.012, cond:()=>S.pop>=80, title:'🎬 영화 출연 제의', text:'프로게이머를 주인공으로 한 영화의 주연 제의가 들어왔다.', choices:[
+   {label:'출연한다', run:()=>{ S.flags.movie=true; fx({pop:12,fatigue:15}); hist('영화 주연 출연','key'); return '촬영은 고됐지만 개봉 첫 주 박스오피스 1위!'; }},
+   {label:'게임에 집중한다', run:()=>{ fx({skill:2}); return '"연기는 은퇴하고 할게요."'; }}]},
+ {id:'h_ghost', p:.004, cond:()=>S.age<17&&!S.team, title:'👻 PC방의 유령', text:'새벽 3시, 아무도 없는 PC방 구석 자리에서 누군가 말을 걸었다. "손목 각도가 틀렸어."', choices:[
+   {label:'가르침을 받는다', run:()=>{ for(const k of ['phys','macro','mental']) S.talent[k]=Math.min(1.35, S.talent[k]+.06); hist('PC방의 유령에게 가르침을 받다','key'); return '정신을 차려보니 아침이었다. 손끝 감각이 완전히 달라졌다. (모든 성장 재능 상승)'; }},
+   {label:'도망친다', run:()=>{ fx({mental:-3}); return '다음 날 알아보니 그 자리는… 10년 전에 폐업한 PC방이었다.'; }}]},
+ {id:'h_rival', p:.004, cond:()=>!!S.flags.rivalMet&&!!S.rv&&!S.rv.retired&&S.age>=22, title:'💌 라이벌의 고백', text:()=>`라이벌 '${S.rv.name}' 선수가 털어놓았다. "사실 나, 14살 때 PC방에서 너 플레이하는 거 보고 게임 시작했어."`, choices:[
+   {label:'"…나도 너 덕분에 여기까지 왔어"', run:()=>{ S.flags.rivalBond=true; fx({mental:10}); hist(`라이벌 ${S.rv.name} 선수와 진짜 친구가 되다`,'key'); return '둘은 한참을 웃었다. 경기장에선 적, 경기장 밖에선 친구다.'; }}]},
+ {id:'h_letter', p:.006, cond:()=>S.age>=24&&!!S.genre, title:'📼 14살의 편지', text:'이사하다가 14살의 내가 쓴 편지를 찾았다. "미래의 나에게. 프로게이머가 됐니?"', choices:[
+   {label:'답장을 써 본다', run:()=>{ if(S.wasPro){ fx({mental:12}); return '"응, 됐어. 그리고 생각보다 훨씬 멋진 일들이 있었어."'; } fx({mental:6}); return '"아직이야. 그래도 포기하진 않았어."'; }}]},
+];
+async function hiddenEvent(){
+  const pool = HIDDEN.filter(e=>!S.seen[e.id] && e.cond());
+  for(const e of pool){
+    if(!chance(e.p)) continue;
+    S.seen[e.id]=true;
+    const text = typeof e.text==='function' ? e.text() : e.text;
+    const i = await modal({title:`✨ ${e.title}`, html:`<div class="hiddentag">✨ 히든 이벤트 · 아주 드물게 일어나는 일</div><p>${text}</p>`,
+      choices:e.choices.map(c=>({label:c.label})), kind:'hidden'});
+    const b=snap(); const r=e.choices[i].run(); const d=diffHtml(b,snap());
+    log(`✨ ${e.title} — ${r}`, d, 'key');
+    await modal({title:`✨ ${e.title}`, html:`<p>${r}</p>${d}`, choices:[{label:'확인'}], kind:'hidden'});
+    return;
+  }
+}
+
 async function randomEvent(){
   const pool = EVENTS.filter(e=>(!e.once||!S.seen[e.id]) && (S.cool[e.id]||0)<=S.turn && e.cond());
   if(!pool.length) return;
@@ -1375,15 +1424,24 @@ async function askRetire(){
   const i = await modal({title:'🏁 은퇴', html:'<p>정말 지금 선수 생활을 마무리할까요?</p>', choices:[{label:'은퇴한다'},{label:'아직 아니다'}]});
   if(i===0){ busy=true; await retire(); busy=false; }
 }
+const HIDDEN_CAREERS = [
+  {key:'hall', label:'✨ 🗿 명예의 전당', ok:()=>S.trophies.worlds.length>=3&&S.trophies.league.length>=5},
+  {key:'rivalteam', label:'✨ 🤝 라이벌과 공동 창단', ok:()=>!!S.flags.rivalBond||(!!S.flags.rivalMet&&!!S.rv&&S.rv.h2h.w+S.rv.h2h.l>=16&&Math.abs(S.rv.h2h.w-S.rv.h2h.l)<=2)},   // 고백 이벤트, 또는 16번 넘게 맞붙은 막상막하 라이벌
+  {key:'dev', label:'✨ 🎮 게임 개발자', ok:()=>!!S.flags.devOpen},
+  {key:'actor', label:'✨ 🎬 영화배우', ok:()=>!!S.flags.movie&&S.pop>=50},
+  {key:'airesearch', label:'✨ 🤖 AI 연구원', ok:()=>!!S.flags.aiMatch&&S.edu>=40},
+];
 async function retire(){
-  const careers = [
+  if(S.flags.hiddenCareer){ S.career=S.flags.hiddenCareer; S.ended=true; await showRecap(); showEnding(); return; }
+  const hidden = HIDDEN_CAREERS.filter(h=>h.ok()).map(h=>({key:h.key, label:h.label, ok:true, req:'히든 엔딩 해금!'}));
+  const careers = [...hidden,
     {key:'coach', label:'🎓 코치', ok:S.wasPro&&S.macro>=65, req:'1군 경력 + 운영 65 이상'},
     {key:'caster', label:'🎤 해설위원', ok:(S.pop>=40&&S.macro>=55)||!!S.flags.caster, req:'인기 40 + 운영 55, 또는 해설 경험'},
     {key:'streamer', label:'📺 스트리머', ok:S.pop>=20, req:'인기 20 이상'},
     {key:'biz', label:'💼 사업가', ok:S.money>=5000, req:'자산 5,000만원 이상'},
     {key:'job', label:'🏢 일반 취업', ok:true, req:'학업 수준에 따라 결과가 달라짐'},
   ];
-  const i = await modal({title:'🌅 두 번째 인생', html:'<p>선수로서의 인생은 끝났다. 이제 무엇을 할까?</p>',
+  const i = await modal({title:'🌅 두 번째 인생', html:`<p>선수로서의 인생은 끝났다. 이제 무엇을 할까?</p>${hidden.length?'<p class="hiddentag">✨ 특별한 길이 열렸다!</p>':''}`,
     choices:careers.map(c=>({label:c.label, desc:c.req, disabled:!c.ok}))});
   S.career = careers[i].key;
   S.ended = true;
@@ -1543,7 +1601,9 @@ const ACHS = [
   {id:'allcountry', cat:'collect', ic:'🌏', name:'세계 일주', desc:'6개 나라 모두로 1군 데뷔', meta:true, test:c=>Object.keys(c.countries).length>=6},
   {id:'allgenre', cat:'collect', ic:'🎮', name:'올라운더', desc:'5개 장르 모두로 1군 데뷔', meta:true, test:c=>Object.keys(c.genres).length>=5},
   {id:'endings6', cat:'collect', ic:'🎬', name:'다양한 인생', desc:'서로 다른 엔딩 6종 보기', meta:true, test:c=>Object.keys(c.endings).length>=6},
-  {id:'events40', cat:'collect', ic:'📖', name:'이야기 수집가', desc:'서로 다른 이벤트 40종 보기', meta:true, test:c=>Object.keys(c.events).length>=40},
+  {id:'hiddenEv', cat:'collect', ic:'✨', name:'숨겨진 이야기', desc:'히든 이벤트 보기', meta:true, test:c=>HIDDEN.some(e=>c.events[e.id])},
+  {id:'hiddenEnd', cat:'collect', ic:'🗝️', name:'비밀의 문', desc:'히든 엔딩 보기', meta:true, test:c=>HIDDEN_ENDINGS.some(e=>c.endings[e])},
+  {id:'events40', cat:'collect', ic:'📖', name:'이야기 수집가', desc:'서로 다른 이벤트 40종 보기', meta:true, test:c=>EVENTS.filter(e=>c.events[e.id]).length>=40},
   // 재미
   {id:'scammed', cat:'fun', ic:'😵', name:'사회 초년생', desc:'입단 테스트 사기 당하기', test:()=>H(/사기 피해/)},
   {id:'rivalwin', cat:'fun', ic:'🔥', name:'라이벌 격파', desc:'라이벌 맞대결에서 완승', test:()=>H(/라이벌 .* 완승/)},
@@ -1597,8 +1657,8 @@ function checkAch(final){
 }
 function colStats(){
   const c=getCol();
-  const n = Object.keys(c.ach).length + ENDINGS.filter(e=>c.endings[e]).length + TITLES.filter(t=>c.titles[t]).length + EVENTS.filter(e=>c.events[e.id]).length;
-  const total = ACHS.length + ENDINGS.length + TITLES.length + EVENTS.length;
+  const n = Object.keys(c.ach).length + [...ENDINGS,...HIDDEN_ENDINGS].filter(e=>c.endings[e]).length + TITLES.filter(t=>c.titles[t]).length + [...EVENTS,...HIDDEN].filter(e=>c.events[e.id]).length;
+  const total = ACHS.length + ENDINGS.length + HIDDEN_ENDINGS.length + TITLES.length + EVENTS.length + HIDDEN.length;
   return {c, n, total, pct: Math.round(n/total*100)};
 }
 async function showCollection(tab='ach'){
@@ -1614,16 +1674,19 @@ async function showCollection(tab='ach'){
         ACHS.filter(a=>a.cat===k).map(a=>card(!!c.ach[a.id], a.ic, a.name, a.desc, c.ach[a.id]?`<small class="ad">${c.ach[a.id]} 달성</small>`:'')).join('')}</div>`).join('');
     } else if(tab==='end'){
       const n=ENDINGS.filter(e=>c.endings[e]).length;
-      head=`엔딩 ${n} / ${ENDINGS.length}`;
-      body = `<div class="achgrid">${ENDINGS.map((e,i)=>c.endings[e] ? card(true, ENDING_IC[i], e, `${c.endings[e]}번 봤어요`) : card(false,'','???','')).join('')}</div>`;
+      head=`엔딩 ${n+HIDDEN_ENDINGS.filter(e=>c.endings[e]).length} / ${ENDINGS.length+HIDDEN_ENDINGS.length}`;
+      body = `<div class="achgrid">${ENDINGS.map((e,i)=>c.endings[e] ? card(true, ENDING_IC[i], e, `${c.endings[e]}번 봤어요`) : card(false,'','???','')).join('')}</div>
+        <h4 class="achh">✨ 히든 엔딩</h4><div class="achgrid">${HIDDEN_ENDINGS.map((e,i)=>c.endings[e] ? card(true, HIDDEN_ENDING_IC[i], e, `${c.endings[e]}번 봤어요`) : card(false,'','✨ ???','숨겨진 엔딩')).join('')}</div>`;
     } else if(tab==='title'){
       const n=TITLES.filter(t=>c.titles[t]).length;
       head=`칭호 ${n} / ${TITLES.length}`;
       body = `<div class="achgrid">${TITLES.map(t=>c.titles[t] ? card(true,'🎖️',t,`${c.titles[t]}번 획득`) : card(false,'','???','')).join('')}</div>`;
     } else {
       const n=EVENTS.filter(e=>c.events[e.id]).length;
-      head=`이벤트 ${n} / ${EVENTS.length}`;
-      body = `<div class="achgrid">${EVENTS.map(e=>c.events[e.id] ? card(true, e.title.split(' ')[0], e.title.split(' ').slice(1).join(' '), '') : card(false,'','???','')).join('')}</div>`;
+      const hn=HIDDEN.filter(e=>c.events[e.id]).length;
+      head=`이벤트 ${n+hn} / ${EVENTS.length+HIDDEN.length}`;
+      body = `<div class="achgrid">${EVENTS.map(e=>c.events[e.id] ? card(true, e.title.split(' ')[0], e.title.split(' ').slice(1).join(' '), '') : card(false,'','???','')).join('')}</div>
+        <h4 class="achh">✨ 히든 이벤트 (${hn} / ${HIDDEN.length})</h4><div class="achgrid">${HIDDEN.map(e=>c.events[e.id] ? card(true, e.title.split(' ')[0], e.title.split(' ').slice(1).join(' '), '') : card(false,'','✨ ???','아주 드물게 일어나요')).join('')}</div>`;
     }
     const tabs=[['ach','🏅 업적'],['end','🎬 엔딩'],['title','🎖️ 칭호'],['ev','📖 이벤트']];
     const i = await modal({title:'📚 도감', html:`<div class="colhead"><span>전체 수집률 <b>${pct}%</b></span><span class="muted">${head}</span></div>
@@ -1651,8 +1714,16 @@ function computeTitle(){
   if(S.peakMmr>=2850) return '랭크의 신 (프로 데뷔 실패)';
   return '꿈꾸던 게이머';
 }
+const HIDDEN_ENDINGS = ['명예의 전당','라이벌과 공동 창단','게임 개발자','건물주 게이머','영화배우','AI 연구원'];
+const HIDDEN_ENDING_IC = ['🗿','🤝','🎮','🏢','🎬','🤖'];
 function careerText(){
   const c=S.career;
+  if(c==='hall') return ['명예의 전당','e스포츠 명예의 전당에 헌액되었다. 내 이름을 딴 대회가 매년 열린다.'];
+  if(c==='rivalteam') return ['라이벌과 공동 창단',`평생의 라이벌 ${S.rv?S.rv.name:''} 선수와 함께 새 팀을 창단했다. 감독석에 나란히 앉은 두 사람.`];
+  if(c==='dev') return ['게임 개발자','직접 기획한 게임이 e스포츠 정식 종목이 되었다. 이제 선수들이 내가 만든 게임으로 경쟁한다.'];
+  if(c==='owner') return ['건물주 게이머','빌딩 1층에 PC방을 차리고, 꼭대기 층에서 매일 랭크를 돌린다. 이것이 진짜 인생 2회차.'];
+  if(c==='actor') return ['영화배우','영화가 대박 나며 배우로 전향했다. 레드카펫 위의 전직 프로게이머.'];
+  if(c==='airesearch') return ['AI 연구원','AI와의 대결을 계기로 연구소에 합류했다. 사람과 AI가 함께 뛰는 리그를 만드는 중이다.'];
   if(c==='coach') return S.macro>=85 ? ['명장 감독','선수 시절의 운영 능력으로 명문팀 감독이 되어 우승을 휩쓸었다.'] : ['코치','후배들을 가르치며 e스포츠계에 남았다.'];
   if(c==='caster') return S.pop>=70 ? ['국민 해설','"이 목소리 없으면 결승이 아니다." 레전드 해설위원이 되었다.'] : ['해설위원','날카로운 분석으로 사랑받는 해설위원이 되었다.'];
   if(c==='streamer') return S.pop>=70 ? ['은퇴 후 대박 스트리머','구독자 수백만의 탑 스트리머! 선수 시절보다 더 벌었다.'] : S.pop>=40 ? ['인기 스트리머','꾸준한 시청자층과 함께 방송을 이어갔다.'] : ['소소한 스트리머','시청자는 적지만 즐겁게 방송 중이다.'];
@@ -1690,7 +1761,7 @@ function showEnding(){
   $('#ending').innerHTML = `<div class="endcard">
     <div class="muted">${S.daily?`<span class="pill hot">📅 오늘의 시드 ${S.daily}</span> `:''}${esc(S.name)}의 인생 · 14세 ~ ${S.age}세</div>
     <div class="big">${esc(S.name)}</div>
-    <div class="title-badge">${title}</div> <span class="pill">${sub}</span>
+    <div class="title-badge">${title}</div> <span class="pill">${sub}</span>${HIDDEN_ENDINGS.includes(sub)?' <span class="pill hidp">✨ 히든 엔딩</span>':''}
     <p>${subText}</p>
     <div class="gacha">
       <div class="gcell"><div class="l">주 종목</div><div class="v" style="font-size:15px">${genres}</div></div>
@@ -1989,6 +2060,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {b:8, d:'2026-11-24', items:['✨ 히든 이벤트 9종: 아주 드물게 일어나는 특별한 순간','🗝️ 히든 엔딩 6종: 조건을 만족하면 은퇴 때 특별한 길이 열려요','📚 도감에 히든 칸 추가, 히든 업적 2종']},
   {b:7, d:'2026-11-24', items:['🔤 일부 기기에서 숫자 글꼴이 이상하게 보이던 문제 수정']},
   {b:6, d:'2026-11-24', items:['📢 게임 중에 업데이트가 나오면, 게임이 끝난 뒤 알려줘요','🔧 게임 개선을 위한 익명 방문 통계']},
   {b:5, d:'2026-11-24', items:['📅 오늘의 시드: 매일 모두가 같은 조건·같은 운으로 도전','📅 오늘의 랭킹 탭과 결과 이미지 날짜 표시','🏅 업적 「오늘의 도전자」 추가']},
