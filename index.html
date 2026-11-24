@@ -199,6 +199,11 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 @keyframes slidein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .modal[data-kind=match]{border-color:var(--accent)}
 .modal[data-kind=event]{border-color:#4a3a73}
+.rtabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.rtab{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted)}
+.rtab.on{border-color:var(--accent);background:#1b2440;color:#cfe0ff;font-weight:700}
+.rkcap{margin:0 0 6px;font-size:12.5px}
+.seedtag{font-size:11px;color:var(--gold);margin-left:5px;font-weight:600}
 .modal[data-kind=hidden]{border-color:#c9a2ff;box-shadow:0 0 50px rgba(201,162,255,.28);background:linear-gradient(160deg,#1e1730,var(--panel))}
 .hiddentag{display:inline-block;font-size:12px;color:#e4cfff;background:#2c2048;border:1px solid #6b4fa8;border-radius:999px;padding:2px 10px;margin:2px 0 6px}
 .pill.hidp{border-color:#c9a2ff;color:#e4cfff}
@@ -1974,16 +1979,28 @@ function restart(){ S=null; rerolls=3; roll=rollBirth(); $('#ending').classList.
 const RANK = { projectId:'web-game-progamer', apiKey:'AIzaSyCJBvxzPUedlrQY2KFL4j8SAMJ5VXGMK9w' };
 const rankOn = () => !!(RANK.projectId && RANK.apiKey);
 const fsBase = () => `https://firestore.googleapis.com/v1/projects/${RANK.projectId}/databases/(default)/documents`;
-async function fetchTop(){
-  const r = await fetch(`${fsBase()}:runQuery?key=${RANK.apiKey}`, {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({structuredQuery:{from:[{collectionId:'scores'}], orderBy:[{field:{fieldPath:'score'},direction:'DESCENDING'}], limit:50}})});
+function docToRec(x){
+  const f=x.document.fields||{}, v=k=>!f[k]?'':('stringValue' in f[k] ? f[k].stringValue : Number(f[k].integerValue));
+  return {name:v('name'), score:v('score'), title:v('title'), career:v('career'), genres:v('genres'), date:v('date'), seed:v('v')===2};
+}
+async function runQ(structuredQuery){
+  const r = await fetch(`${fsBase()}:runQuery?key=${RANK.apiKey}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({structuredQuery})});
   if(!r.ok) throw new Error('rank '+r.status);
-  const j = await r.json();
-  return j.filter(x=>x.document).map(x=>{
-    const f=x.document.fields||{};
-    const v=k=>!f[k]?'':('stringValue' in f[k] ? f[k].stringValue : Number(f[k].integerValue));
-    return {name:v('name'), score:v('score'), title:v('title'), career:v('career'), genres:v('genres'), date:v('date')};
-  });
+  return (await r.json()).filter(x=>x.document).map(docToRec);
+}
+const fetchTop = () => runQ({from:[{collectionId:'scores'}], orderBy:[{field:{fieldPath:'score'},direction:'DESCENDING'}], limit:50});
+// 날짜 목록에 해당하는 기록 (같음/IN 조건만 써서 별도 색인 없이 동작, 점수 정렬은 화면에서)
+async function fetchDates(dates){
+  const where = dates.length===1
+    ? {fieldFilter:{field:{fieldPath:'date'}, op:'EQUAL', value:{stringValue:dates[0]}}}
+    : {fieldFilter:{field:{fieldPath:'date'}, op:'IN', value:{arrayValue:{values:dates.map(d=>({stringValue:d}))}}}};
+  return (await runQ({from:[{collectionId:'scores'}], where, limit:1000})).sort((a,b)=>b.score-a.score).slice(0,50);
+}
+function ymd(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function weekDates(){   // 이번 주 월요일 ~ 오늘
+  const d=new Date(), dow=(d.getDay()+6)%7, out=[];
+  for(let i=dow;i>=0;i--){ const x=new Date(d); x.setDate(d.getDate()-i); out.push(ymd(x)); }
+  return out;
 }
 async function fsCreate(collection, rec){
   const fields={};
@@ -2039,13 +2056,7 @@ async function fetchDaily(date){
   const body={structuredQuery:{from:[{collectionId:'scores'}], where:{compositeFilter:{op:'AND', filters:[
     {fieldFilter:{field:{fieldPath:'date'}, op:'EQUAL', value:{stringValue:date}}},
     {fieldFilter:{field:{fieldPath:'v'}, op:'EQUAL', value:{integerValue:'2'}}}]}}, limit:300}};
-  const r = await fetch(`${fsBase()}:runQuery?key=${RANK.apiKey}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-  if(!r.ok) throw new Error('daily '+r.status);
-  const j = await r.json();
-  return j.filter(x=>x.document).map(x=>{
-    const f=x.document.fields||{}, v=k=>!f[k]?'':('stringValue' in f[k] ? f[k].stringValue : Number(f[k].integerValue));
-    return {name:v('name'), score:v('score'), title:v('title'), career:v('career'), genres:v('genres')};
-  }).sort((a,b)=>b.score-a.score).slice(0,50);
+  return (await runQ(body.structuredQuery)).sort((a,b)=>b.score-a.score).slice(0,50);
 }
 function saveLocalRecord(rec){
   const list = (storeGet('pg_records')||[]).concat([rec]).sort((a,b)=>b.score-a.score).slice(0,10);
@@ -2054,35 +2065,52 @@ function saveLocalRecord(rec){
 function rankTable(list){
   const medal = i => ['🥇','🥈','🥉'][i] || (i+1);
   return `<table class="rank"><tr><th>#</th><th>선수</th><th style="text-align:right">점수</th></tr>${list.map((r,i)=>`
-    <tr><td class="n">${medal(i)}</td><td><b>${esc(r.name)}</b> · ${esc(r.title)}<small>${esc(r.genres||'')}${r.career?' · 은퇴 후 '+esc(r.career):''}${r.date?' · '+esc(r.date):''}</small></td>
+    <tr><td class="n">${medal(i)}</td><td><b>${esc(r.name)}</b>${r.seed?'<span class="seedtag">📅 시드</span>':''} · ${esc(r.title)}<small>${esc(r.genres||'')}${r.career?' · '+(String(r.career).startsWith('은퇴 후')?'':'은퇴 후 ')+esc(r.career):''}${r.date?' · '+esc(r.date):''}</small></td>
     <td class="s">${Number(r.score).toLocaleString()}</td></tr>`).join('')}</table>`;
 }
+const RANK_TABS = [['today','📆 오늘'],['week','🗓️ 이번 주'],['online','🌐 전체'],['daily','📅 오늘의 시드'],['local','📒 내 기록']];
+async function rankHtml(tab){
+  const fail = '<p class="muted">랭킹을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>';
+  const empty = msg => `<p class="muted">${msg}</p>`;
+  if(tab!=='local' && !rankOn()) return empty('온라인 랭킹은 준비 중이에요. 그동안 내 기록으로 도전해 보세요!');
+  try{
+    if(tab==='today'){
+      const list = await fetchDates([today()]);
+      return `<p class="muted rkcap">${today()} · 자유 플레이와 오늘의 시드 기록 모두</p>` + (list.length ? rankTable(list) : empty('아직 오늘 등록된 기록이 없어요. 오늘의 1등이 되어 보세요!'));
+    }
+    if(tab==='week'){
+      const days = weekDates(), list = await fetchDates(days);
+      const md = d => `${+d.slice(5,7)}/${+d.slice(8,10)}`;
+      return `<p class="muted rkcap">이번 주 ${md(days[0])}(월) ~ ${md(days[days.length-1])} · 매주 월요일에 새로 시작해요</p>` + (list.length ? rankTable(list) : empty('아직 이번 주 기록이 없어요. 이번 주 1등을 노려 보세요!'));
+    }
+    if(tab==='online'){
+      const list = await fetchTop();
+      return `<p class="muted rkcap">지금까지의 모든 기록 TOP 50</p>` + (list.length ? rankTable(list) : empty('아직 등록된 기록이 없어요. 첫 번째 주인공이 되어 보세요!'));
+    }
+    if(tab==='daily'){
+      const list = await fetchDaily(today());
+      return `<p class="muted rkcap">${today()} · 모두 같은 조건으로 겨룬 오늘의 시드 기록</p>` + (list.length ? rankTable(list) : empty('아직 오늘의 시드 기록이 없어요. 오늘의 첫 주인공이 되어 보세요!'));
+    }
+  }catch(e){ return fail; }
+  const list = storeGet('pg_records')||[];
+  return `<p class="muted rkcap">이 브라우저에 저장된 내 기록 TOP 10</p>` + (list.length ? rankTable(list) : empty('아직 기록이 없어요. 인생을 한 번 끝까지 살아보세요!'));
+}
 async function showRanking(tab){
-  tab = tab || (rankOn() ? 'online' : 'local');
-  $('#mTitle').textContent='불러오는 중…'; $('#mBody').innerHTML=''; $('#mChoices').innerHTML=''; $('#modal').classList.add('show');
-  let html;
-  if(tab==='daily'){
-    const date=today();
-    if(!rankOn()) html='<p class="muted">온라인 랭킹은 준비 중이에요.</p>';
-    else {
-      try{ const list=await fetchDaily(date); html = `<p class="muted" style="margin-top:0">${date} · 모두 같은 조건으로 겨룬 결과예요</p>` + (list.length ? rankTable(list) : '<p class="muted">아직 오늘의 기록이 없어요. 오늘의 첫 주인공이 되어 보세요!</p>'); }
-      catch(e){ html='<p class="muted">랭킹을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>'; }
-    }
-  } else if(tab==='online'){
-    if(!rankOn()) html='<p class="muted">온라인 랭킹은 준비 중이에요. 그동안 내 기록으로 도전해 보세요!</p>';
-    else {
-      try{ const list=await fetchTop(); html = list.length ? rankTable(list) : '<p class="muted">아직 등록된 기록이 없어요. 첫 번째 주인공이 되어 보세요!</p>'; }
-      catch(e){ html='<p class="muted">랭킹을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>'; }
-    }
-  } else {
-    const list=storeGet('pg_records')||[];
-    html = list.length ? rankTable(list) : '<p class="muted">아직 기록이 없어요. 인생을 한 번 끝까지 살아보세요!</p>';
-  }
-  const TABS=[['daily','📅 오늘의 시드'],['online','🌐 전체 랭킹'],['local','📒 내 기록']];
-  const rest=TABS.filter(t=>t[0]!==tab);
-  const titles={daily:'📅 오늘의 시드 랭킹', online:'🌐 전체 랭킹 TOP 50', local:'📒 내 기록 TOP 10'};
-  const i = await modal({title: titles[tab], html, choices:[...rest.map(t=>({label:t[1]+' 보기'})), {label:'닫기'}]});
-  if(i<rest.length) return showRanking(rest[i][0]);
+  tab = tab || (rankOn() ? 'today' : 'local');
+  const p = modal({title:'🏆 랭킹', html:`<div class="rtabs">${RANK_TABS.map(([k,l])=>`<button class="rtab" data-rt="${k}">${l}</button>`).join('')}</div><div id="rkBody"></div>`,
+    choices:[{label:'닫기'}], kind:'col'});
+  let cur = tab;
+  const load = async t => {
+    cur = t;
+    document.querySelectorAll('.rtab').forEach(b=>b.classList.toggle('on', b.dataset.rt===t));
+    const box=$('#rkBody'); if(!box) return;
+    box.innerHTML='<p class="muted">불러오는 중…</p>';
+    const h = await rankHtml(t);
+    if(cur===t && $('#rkBody')===box) box.innerHTML = h;   // 그사이 다른 탭을 눌렀으면 무시
+  };
+  document.querySelectorAll('.rtab').forEach(b=>b.onclick=()=>load(b.dataset.rt));
+  load(tab);
+  await p;
 }
 async function submitRank(){
   const btn=$('#rankBtn');
@@ -2091,7 +2119,7 @@ async function submitRank(){
   try{
     await submitScore(S.rankRec);
     S.submitted=true; btn.textContent='✅ 랭킹 등록 완료';
-    await showRanking(S.daily ? 'daily' : 'online');
+    await showRanking(S.daily ? 'daily' : 'today');
   }catch(e){
     btn.disabled=false; btn.textContent='🌐 랭킹 등록 (다시 시도)';
   }
@@ -2131,6 +2159,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {b:11, d:'2026-11-24', items:['📆 오늘 랭킹, 🗓️ 이번 주 랭킹 추가 (매주 월요일 새로 시작)','🏆 랭킹 창을 탭으로 한눈에: 오늘 · 이번 주 · 전체 · 오늘의 시드 · 내 기록']},
   {b:10, d:'2026-11-24', items:['🔊 효과음 추가: 승리·패배·우승 팡파르·업적·이벤트·히든 이벤트 등','🔇 오른쪽 위 버튼으로 효과음을 끄고 켤 수 있어요']},
   {b:9, d:'2026-11-24', items:['🖱️ 팝업 바깥을 누르거나 Esc를 누르면 닫혀요 (꼭 골라야 하는 선택 창은 제외)']},
   {b:8, d:'2026-11-24', items:['✨ 히든 이벤트 9종: 아주 드물게 일어나는 특별한 순간','🗝️ 히든 엔딩 6종: 조건을 만족하면 은퇴 때 특별한 길이 열려요','📚 도감에 히든 칸 추가, 히든 업적 2종']},
