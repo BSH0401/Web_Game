@@ -87,6 +87,8 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .ov{position:fixed;inset:0;background:rgba(5,7,12,.72);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
 .ov.show{display:flex}
 .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:18px;animation:pop .18s ease-out}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.modal.shake{animation:shake .35s ease}
 @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:none;opacity:1}}
 .modal h2{margin:0 0 8px;font-size:19px}
 .modal p{margin:6px 0}
@@ -612,8 +614,15 @@ function hist(text,type='key'){ S.history.push({age:S.age,q:S.q,text,type}); }
 function log(text, chips='', type=''){ S.logSeq=(S.logSeq||0)+1; S.log.unshift({id:S.logSeq, when:`${S.age}세 ${S.q+1}분기`, text, chips, type}); if(S.log.length>80) S.log.pop(); }
 
 /* ================= 모달 ================= */
+// 바깥 클릭·Esc로 닫아도 되는 창인지: 버튼이 하나뿐이거나, 마지막 버튼이 '닫기·취소·나중에' 같은 빠져나가기 버튼일 때만
+const CLOSE_WORDS = /^(닫기|취소|나중에|아직 아니다|건너뛰기)$/;
+let modalDismiss = null;   // 바깥 클릭 시 실행할 함수 (null이면 꼭 골라야 하는 창)
 function modal({title, html='', choices=[{label:'확인'}], kind=''}){
   return new Promise(res=>{
+    const plain = l => String(l).replace(/<[^>]*>/g,'').trim();
+    const last = choices.length-1;
+    const dIdx = choices.length===1 ? 0 : CLOSE_WORDS.test(plain(choices[last].label)) && !choices[last].disabled ? last : -1;
+    modalDismiss = dIdx<0 ? null : () => { $('#modal').classList.remove('show'); modalDismiss=null; res(dIdx); };
     $('#modal .modal').dataset.kind = kind;
     $('#mTitle').textContent = title;
     $('#mBody').innerHTML = html;
@@ -622,13 +631,24 @@ function modal({title, html='', choices=[{label:'확인'}], kind=''}){
       const b=document.createElement('button');
       b.className='choice'; b.disabled=!!c.disabled;
       b.innerHTML=`<b>${c.label}</b>${c.desc?`<small>${c.desc}</small>`:''}`;
-      b.onclick=()=>{ $('#modal').classList.remove('show'); res(i); };
+      b.onclick=()=>{ $('#modal').classList.remove('show'); modalDismiss=null; res(i); };
       box.appendChild(b);
     });
     $('#modal').classList.add('show');
   });
 }
 const info = (title, html, kind='') => modal({title, html, kind});
+// 바깥(어두운 배경)을 눌렀을 때: 닫아도 되는 창이면 닫고, 꼭 골라야 하는 창이면 살짝 흔든다
+let ovDown = null;
+$('#modal').addEventListener('pointerdown', e=>{ ovDown = e.target; });
+$('#modal').addEventListener('click', e=>{
+  if(e.target !== $('#modal') || ovDown !== $('#modal')) return;   // 창 안에서 드래그하다 바깥에서 뗀 경우는 무시
+  if(modalDismiss) modalDismiss();
+  else { const m=$('#modal .modal'); m.classList.remove('shake'); void m.offsetWidth; m.classList.add('shake'); }
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && $('#modal').classList.contains('show') && modalDismiss){ e.preventDefault(); modalDismiss(); }
+});
 let toastTimer=null;
 function showToast(html){
   const t=$('#toast'); t.innerHTML=html; t.classList.add('show');
@@ -2060,6 +2080,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {b:9, d:'2026-11-24', items:['🖱️ 팝업 바깥을 누르거나 Esc를 누르면 닫혀요 (꼭 골라야 하는 선택 창은 제외)']},
   {b:8, d:'2026-11-24', items:['✨ 히든 이벤트 9종: 아주 드물게 일어나는 특별한 순간','🗝️ 히든 엔딩 6종: 조건을 만족하면 은퇴 때 특별한 길이 열려요','📚 도감에 히든 칸 추가, 히든 업적 2종']},
   {b:7, d:'2026-11-24', items:['🔤 일부 기기에서 숫자 글꼴이 이상하게 보이던 문제 수정']},
   {b:6, d:'2026-11-24', items:['📢 게임 중에 업데이트가 나오면, 게임이 끝난 뒤 알려줘요','🔧 게임 개선을 위한 익명 방문 통계']},
