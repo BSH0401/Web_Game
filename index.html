@@ -225,6 +225,11 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 .rvcard .t{display:flex;justify-content:space-between;gap:6px;font-size:13px}
 .rvcmp{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:4px 8px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:13.5px;text-align:center}
 .rvcmp > :nth-child(3n+1){text-align:left}
+.modes{display:flex;gap:6px;margin-bottom:14px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:4px}
+.mbtn{flex:1;background:transparent;border:0;border-radius:9px;padding:8px;font-weight:600;color:var(--muted)}
+.mbtn.on{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff}
+.dailybox{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;background:#231f12;border:1px solid #6b5a2a;border-radius:10px;padding:8px 12px;font-size:13px}
+.mini.hotm{border-color:var(--gold);color:var(--gold)}
 .colhead{display:flex;justify-content:space-between;font-size:13px}
 .achh{margin:12px 0 6px;font-size:13px;color:var(--muted)}
 .achgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px}
@@ -478,11 +483,20 @@ const STAT_LABEL = {phys:'피지컬',macro:'운영',mental:'멘탈',health:'체�
 
 /* ================= 유틸 ================= */
 const $ = s => document.querySelector(s);
-const rand = (a,b) => a + Math.random()*(b-a);
+// ===== 랜덤: 평소엔 Math.random, '오늘의 시드'에서는 날짜로 정해지는 랜덤 =====
+let _rngState = null;   // 시드 계산용 임시 상태
+function mulberry(st){ const n=(st + 0x6D2B79F5) | 0; let t = Math.imul(n ^ n>>>15, n | 1); t ^= t + Math.imul(t ^ t>>>7, t | 61); return [((t ^ t>>>14) >>> 0) / 4294967296, n]; }
+function rng(){
+  if(typeof S!=='undefined' && S && S.daily && S.rngState!=null){ const [v,n]=mulberry(S.rngState); S.rngState=n; return v; }
+  if(_rngState!=null){ const [v,n]=mulberry(_rngState); _rngState=n; return v; }
+  return Math.random();
+}
+function hashStr(str){ let h=2166136261; for(const ch of str){ h^=ch.codePointAt(0); h=Math.imul(h,16777619); } return h|0; }
+const rand = (a,b) => a + rng()*(b-a);
 const ri = (a,b) => Math.floor(rand(a,b+1));
-const pick = a => a[Math.floor(Math.random()*a.length)];
+const pick = a => a[Math.floor(rng()*a.length)];
 const clamp = (v,a=0,b=100) => Math.max(a,Math.min(b,v));
-const chance = p => Math.random() < p;
+const chance = p => rng() < p;
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function won(m){ m=Math.round(m); return Math.abs(m)>=10000 ? (m/10000).toFixed(1)+'억원' : m.toLocaleString()+'만원'; }
 const tierOf = m => { let t=TIERS[0][1]; for(const [v,n] of TIERS) if(m>=v) t=n; return t; };
@@ -500,15 +514,15 @@ let S = null, busy = false, roll = null, rerolls = 3;
 const START_TOTAL = 90, START_MIN = 10, START_MAX = 50;
 function splitStats(){
   for(;;){
-    const w=[Math.random(),Math.random(),Math.random()], sum=w[0]+w[1]+w[2], free=START_TOTAL-START_MIN*3;
+    const w=[rng(),rng(),rng()], sum=w[0]+w[1]+w[2], free=START_TOTAL-START_MIN*3;
     const v=w.map(x=>START_MIN+Math.floor(x/sum*free));
-    v[Math.floor(Math.random()*3)] += START_TOTAL-(v[0]+v[1]+v[2]);
+    v[Math.floor(rng()*3)] += START_TOTAL-(v[0]+v[1]+v[2]);
     if(v.every(x=>x<=START_MAX)) return {phys:v[0], macro:v[1], mental:v[2]};
   }
 }
 const GRADE_INFO = {S:'매우 빠름', A:'빠름', B:'보통', C:'느림', D:'매우 느림'};
 function rollBirth(){
-  const r = Math.random();
+  const r = rng();
   const family = r<.15 ? FAMILIES[0] : r<.75 ? FAMILIES[1] : FAMILIES[2];
   const d = splitStats();
   return {
@@ -551,7 +565,7 @@ function teamsFor(g){
   const C=CT();
   return TEAMS[g].map(([n,r],i)=>({name: C.cities ? `${C.cities[i]} ${n.split(' ').pop()}` : n, rating: r+leagueOff(g)}));
 }
-function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function prefLabel(g){ const v=CT().pref[g]; return v>=1.25?'🔥 국민 종목':v>=1.05?'인기 종목':v>=.9?'보통':'비인기'; }
 function teamRating(){ return S.team ? S.team.rating + S.teamBonus : 0; }
 const eff = p => p>75 ? 75+(p-75)*.5 : p; // 고점에서는 실력 차이가 덜 벌어진다
@@ -1535,6 +1549,7 @@ const ACHS = [
   {id:'scammed', cat:'fun', ic:'😵', name:'사회 초년생', desc:'입단 테스트 사기 당하기', test:()=>H(/사기 피해/)},
   {id:'rivalwin', cat:'fun', ic:'🔥', name:'라이벌 격파', desc:'라이벌 맞대결에서 완승', test:()=>H(/라이벌 .* 완승/)},
   {id:'rivalh2h', cat:'fun', ic:'⚔️', name:'숙명의 맞대결', desc:'라이벌과 공식전에서 10번 만나기', test:()=>!!S.rv&&S.rv.h2h.w+S.rv.h2h.l>=10},
+  {id:'daily1', cat:'fun', ic:'📅', name:'오늘의 도전자', desc:'오늘의 시드를 끝까지 플레이하기', end:true, test:()=>!!S.daily},
   {id:'arcade', cat:'fun', ic:'🕹️', name:'오락실의 전설', desc:'오락실의 전설을 꺾기', test:()=>H(/오락실의 전설을 꺾다/)},
 ];
 const ENDINGS = ['명장 감독','코치','국민 해설','해설위원','은퇴 후 대박 스트리머','인기 스트리머','소소한 스트리머','e스포츠 구단주','PC방 사장님','대기업 직장인','평범한 직장인','인생 2회차 준비 중'];
@@ -1657,7 +1672,8 @@ function showEnding(){
   const genres = S.careerGenres.length ? S.careerGenres.map(g=>GENRES[g].game).join(' → ') : '정하지 못함';
   const d=new Date(), date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   S.rankRec = {name:S.name, score, title, career:sub, genres:`${CT().flag} ${S.careerGenres.map(g=>GENRES[g].name).join(' → ')||'-'}`,
-    worlds:S.trophies.worlds.length, leagues:S.trophies.league.length, age:S.age, date, v:1};
+    worlds:S.trophies.worlds.length, leagues:S.trophies.league.length, age:S.age, date: S.daily || date, v: S.daily ? 2 : 1};
+  if(S.daily && S.daily===today()){ const dr=dailyRec(); if(score>dr.best){ dr.best=score; storeSet('pg_daily', dr); } }
   saveLocalRecord(S.rankRec);
   checkAch(true);
   const newAch = (S.newAch||[]).map(id=>ACHS.find(a=>a.id===id)).filter(Boolean);
@@ -1671,7 +1687,7 @@ function showEnding(){
   ].join('') || '<div class="muted">우승 기록 없음</div>';
   const tl = S.history.slice(-14).map(h=>`<div class="${h.type}">${h.age}세 · ${esc(h.text)}</div>`).join('') || '<div>조용한 인생이었다.</div>';
   $('#ending').innerHTML = `<div class="endcard">
-    <div class="muted">${esc(S.name)}의 인생 · 14세 ~ ${S.age}세</div>
+    <div class="muted">${S.daily?`<span class="pill hot">📅 오늘의 시드 ${S.daily}</span> `:''}${esc(S.name)}의 인생 · 14세 ~ ${S.age}세</div>
     <div class="big">${esc(S.name)}</div>
     <div class="title-badge">${title}</div> <span class="pill">${sub}</span>
     <p>${subText}</p>
@@ -1690,14 +1706,14 @@ function showEnding(){
     <div class="scoreline"><span class="muted">인생 점수</span><span class="num" id="scoreNum">0</span><span class="muted">점</span>
       ${isBest?'<span class="pill hot">🎉 최고 기록!</span>':`<span class="muted">(최고 ${best.score.toLocaleString()}점 · ${esc(best.title)})</span>`}</div>
     <div class="btnrow"><button class="primary" onclick="restart()">🔁 다시 태어나기</button>
-      ${rankOn()?'<button class="ghost" id="rankBtn" onclick="submitRank()">🌐 랭킹 등록</button>':''}
-      <button class="ghost" onclick="showRanking()">🏆 랭킹 보기</button>
+      ${rankOn()?`<button class="ghost" id="rankBtn" onclick="submitRank()">${S.daily?'📅 오늘의 랭킹 등록':'🌐 랭킹 등록'}</button>`:''}
+      <button class="ghost" onclick="showRanking(${S.daily?"'daily'":''})">🏆 랭킹 보기</button>
       <button class="ghost" onclick="showFeedback()">💬 건의·버그</button>
       <button class="ghost" id="copyBtn" onclick="copyResult()">📋 결과 복사</button></div>
     <button class="primary" style="width:100%;margin-top:10px;background:linear-gradient(90deg,var(--gold),#ff9f6b);color:#241500" onclick="showShareImage()">🖼️ 결과 이미지 만들기 (저장·공유)</button>
   </div>`;
   S.endInfo = {title, sub, score};
-  S.shareText = `🎮 프로게이머 키우기\n${CT().flag} ${S.name} (14~${S.age}세)\n칭호: ${title} / 은퇴 후: ${sub}\n월드 우승 ${S.trophies.worlds.length}회 · 리그 우승 ${S.trophies.league.length}회 · 최고 ${tierOf(S.peakMmr)}\n인생 점수 ${score.toLocaleString()}점`;
+  S.shareText = `🎮 프로게이머 키우기${S.daily?` · 📅 오늘의 시드 ${S.daily}`:''}\n${CT().flag} ${S.name} (14~${S.age}세)\n칭호: ${title} / 은퇴 후: ${sub}\n월드 우승 ${S.trophies.worlds.length}회 · 리그 우승 ${S.trophies.league.length}회 · 최고 ${tierOf(S.peakMmr)}\n인생 점수 ${score.toLocaleString()}점`;
   storeSet('pg_save', null);
   $('#game').classList.add('hide'); $('#ending').classList.remove('hide'); $('#status').innerHTML='';
   window.scrollTo(0,0);
@@ -1726,7 +1742,7 @@ async function makeShareImage(){
   x.fillStyle=bar; x.fillRect(0,0,W,12);
   x.textBaseline='alphabetic';
   // 머리말
-  x.fillStyle='#8b95aa'; x.font=font(700,34); x.fillText('🎮 프로게이머 키우기 · 인생 결과', 72, 104);
+  x.fillStyle=S.daily?'#ffd166':'#8b95aa'; x.font=font(700,34); x.fillText(S.daily?`📅 오늘의 시드 ${S.daily} · 프로게이머 키우기`:'🎮 프로게이머 키우기 · 인생 결과', 72, 104);
   // 이름
   x.fillStyle='#ffffff'; fitFont(x, `${CT().flag} ${S.name}`, 900, 100, W-144); x.fillText(`${CT().flag} ${S.name}`, 72, 232);
   x.fillStyle='#9aa4b8'; x.font=font(500,36); x.fillText(`14세 ~ ${S.age}세 · ${S.family.emoji} ${S.family.name} 출신`, 72, 292);
@@ -1875,6 +1891,19 @@ async function showFeedback(draft={type:'건의', message:'', contact:'', withSt
   if(S && !S.ended) render();
 }
 document.addEventListener('input', e=>{ if(e.target.id==='fbMsg'){ const c=$('#fbCount'); if(c) c.textContent=`${e.target.value.length}/1000`; } });
+async function fetchDaily(date){
+  // 같은 날짜 + 오늘의 시드(v=2) 기록만. 같음 조건만 써서 별도 색인 없이 동작한다
+  const body={structuredQuery:{from:[{collectionId:'scores'}], where:{compositeFilter:{op:'AND', filters:[
+    {fieldFilter:{field:{fieldPath:'date'}, op:'EQUAL', value:{stringValue:date}}},
+    {fieldFilter:{field:{fieldPath:'v'}, op:'EQUAL', value:{integerValue:'2'}}}]}}, limit:300}};
+  const r = await fetch(`${fsBase()}:runQuery?key=${RANK.apiKey}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('daily '+r.status);
+  const j = await r.json();
+  return j.filter(x=>x.document).map(x=>{
+    const f=x.document.fields||{}, v=k=>!f[k]?'':('stringValue' in f[k] ? f[k].stringValue : Number(f[k].integerValue));
+    return {name:v('name'), score:v('score'), title:v('title'), career:v('career'), genres:v('genres')};
+  }).sort((a,b)=>b.score-a.score).slice(0,50);
+}
 function saveLocalRecord(rec){
   const list = (storeGet('pg_records')||[]).concat([rec]).sort((a,b)=>b.score-a.score).slice(0,10);
   storeSet('pg_records', list);
@@ -1889,7 +1918,14 @@ async function showRanking(tab){
   tab = tab || (rankOn() ? 'online' : 'local');
   $('#mTitle').textContent='불러오는 중…'; $('#mBody').innerHTML=''; $('#mChoices').innerHTML=''; $('#modal').classList.add('show');
   let html;
-  if(tab==='online'){
+  if(tab==='daily'){
+    const date=today();
+    if(!rankOn()) html='<p class="muted">온라인 랭킹은 준비 중이에요.</p>';
+    else {
+      try{ const list=await fetchDaily(date); html = `<p class="muted" style="margin-top:0">${date} · 모두 같은 조건으로 겨룬 결과예요</p>` + (list.length ? rankTable(list) : '<p class="muted">아직 오늘의 기록이 없어요. 오늘의 첫 주인공이 되어 보세요!</p>'); }
+      catch(e){ html='<p class="muted">랭킹을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>'; }
+    }
+  } else if(tab==='online'){
     if(!rankOn()) html='<p class="muted">온라인 랭킹은 준비 중이에요. 그동안 내 기록으로 도전해 보세요!</p>';
     else {
       try{ const list=await fetchTop(); html = list.length ? rankTable(list) : '<p class="muted">아직 등록된 기록이 없어요. 첫 번째 주인공이 되어 보세요!</p>'; }
@@ -1899,9 +1935,11 @@ async function showRanking(tab){
     const list=storeGet('pg_records')||[];
     html = list.length ? rankTable(list) : '<p class="muted">아직 기록이 없어요. 인생을 한 번 끝까지 살아보세요!</p>';
   }
-  const i = await modal({title: tab==='online' ? '🌐 전체 랭킹 TOP 50' : '📒 내 기록 TOP 10', html,
-    choices:[{label: tab==='online' ? '📒 내 기록 보기' : '🌐 전체 랭킹 보기'}, {label:'닫기'}]});
-  if(i===0) return showRanking(tab==='online' ? 'local' : 'online');
+  const TABS=[['daily','📅 오늘의 시드'],['online','🌐 전체 랭킹'],['local','📒 내 기록']];
+  const rest=TABS.filter(t=>t[0]!==tab);
+  const titles={daily:'📅 오늘의 시드 랭킹', online:'🌐 전체 랭킹 TOP 50', local:'📒 내 기록 TOP 10'};
+  const i = await modal({title: titles[tab], html, choices:[...rest.map(t=>({label:t[1]+' 보기'})), {label:'닫기'}]});
+  if(i<rest.length) return showRanking(rest[i][0]);
 }
 async function submitRank(){
   const btn=$('#rankBtn');
@@ -1910,7 +1948,7 @@ async function submitRank(){
   try{
     await submitScore(S.rankRec);
     S.submitted=true; btn.textContent='✅ 랭킹 등록 완료';
-    await showRanking('online');
+    await showRanking(S.daily ? 'daily' : 'online');
   }catch(e){
     btn.disabled=false; btn.textContent='🌐 랭킹 등록 (다시 시도)';
   }
@@ -1950,6 +1988,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {v:'2026-11-26', items:['📅 오늘의 시드: 매일 모두가 같은 조건·같은 운으로 도전','📅 오늘의 랭킹 탭과 결과 이미지 날짜 표시','🏅 업적 「오늘의 도전자」 추가']},
   {v:'2026-11-25', items:['🔥 살아 움직이는 라이벌: 함께 성장하고 입단·우승·은퇴까지','⚔️ 라이벌 더비와 결승 맞대결, 상대전적','📰 라이벌 소식 뉴스, 회고·엔딩의 나 vs 라이벌 비교','🏅 라이벌 업적 2종 추가']},
   {v:'2026-11-24', items:['🏅 업적 30종 (커리어·도전·수집·재미)','📚 도감: 엔딩·칭호·이벤트 모으기','🔔 게임 중 업적 달성 알림']},
   {v:'2026-10-29', items:['🖼️ 결과 이미지 저장·공유 (카카오톡·인스타그램)','📘 첫 플레이 안내와 ❓ 도움말','🎲 나라·장르별 새 이벤트 20여 종']},
@@ -1967,9 +2006,27 @@ function maybeShowUpdates(){
   if(seen!==latest) showUpdates();
 }
 
+/* ================= 오늘의 시드 ================= */
+let playMode = storeGet('pg_mode') === 'daily' ? 'daily' : 'free';
+let _daily = null;
+function dailyPack(){
+  const date = today();
+  if(_daily && _daily.date===date) return _daily;
+  _rngState = hashStr('progamer-daily-' + date);
+  const country = pick(Object.keys(COUNTRIES));
+  const r = rollBirth();
+  const state = _rngState; _rngState = null;
+  return _daily = {date, country, roll:r, state};
+}
+function setMode(m){ playMode=m; storeSet('pg_mode', m); const n=$('#nick')?$('#nick').value:''; showStart(); $('#nick').value=n; }
+function dailyRec(){ const d=storeGet('pg_daily'); return d && d.date===today() ? d : {date:today(), tries:0, best:0}; }
+
 /* ================= 시작 화면 ================= */
 function showStart(){
-  const r=roll, t=r.talent;
+  const daily = playMode==='daily', P = daily ? dailyPack() : null;
+  const r = daily ? P.roll : roll, t=r.talent;
+  const ck = daily ? P.country : selCountry, CC = COUNTRIES[ck];
+  const dr = dailyRec();
   const g = k => `<span class="gb grade-${grade(t[k])}">${grade(t[k])}</span>`;
   const d = r.dist || {phys:r.base.phys, macro:r.base.macro, mental:r.base.mental-r.family.mental};
   const cell = (k, label) => {
@@ -1983,12 +2040,14 @@ function showStart(){
   $('#start').classList.remove('hide');
   const fi = FAMILIES.indexOf(r.family);
   $('#start').innerHTML = `
-    <div class="hero"><div class="hero-ic">🍼</div><div><div class="big">출생 가챠</div>
-      <p class="muted" style="margin:0">게임을 사랑하는 14살로 태어났다. 어떤 패를 들고 시작할까?</p></div></div>
-    <div class="l" style="font-size:12px;color:var(--muted);margin-top:14px">🌏 국적 선택</div>
-    <div class="countries">${Object.entries(COUNTRIES).map(([k,c])=>`<button class="cbtn ${k===selCountry?'on':''}" onclick="setCountry('${k}')">${c.flag} ${c.name}</button>`).join('')}</div>
-    <div class="cdesc"><b>${COUNTRIES[selCountry].flag} ${COUNTRIES[selCountry].name}</b> · ${COUNTRIES[selCountry].desc}
-      <br><span class="muted">인기 종목: ${GKEYS.filter(g=>COUNTRIES[selCountry].pref[g]>=1.05).map(g=>GENRES[g].name).join('·')||'없음'}${COUNTRIES[selCountry].asia?' · 🏅 아시안게임 출전국':''}${COUNTRIES[selCountry].military?' · 🪖 병역 의무 (아시안게임 금메달 시 특례)':''}</span></div>
+    <div class="modes"><button class="mbtn ${daily?'':'on'}" onclick="setMode('free')">🎲 자유 플레이</button><button class="mbtn ${daily?'on':''}" onclick="setMode('daily')">📅 오늘의 시드</button></div>
+    <div class="hero"><div class="hero-ic">${daily?'📅':'🍼'}</div><div><div class="big">${daily?'오늘의 시드':'출생 가챠'}</div>
+      <p class="muted" style="margin:0">${daily?`<b style="color:var(--text)">${P.date}</b> · 오늘은 모두가 같은 조건, 같은 운으로 시작해요. 같은 선택을 하면 같은 결과가 나와요. 점수 차이는 오직 선택의 차이!`:'게임을 사랑하는 14살로 태어났다. 어떤 패를 들고 시작할까?'}</p></div></div>
+    ${daily?`<div class="dailybox"><span>오늘 도전 <b>${dr.tries}</b>번 · 내 최고 <b>${dr.best.toLocaleString()}</b>점</span><button class="linkbtn" onclick="showRanking('daily')">📅 오늘의 랭킹 보기</button></div>`:''}
+    <div class="l" style="font-size:12px;color:var(--muted);margin-top:14px">🌏 국적 ${daily?'(오늘의 시드로 정해짐)':'선택'}</div>
+    ${daily ? '' : `<div class="countries">${Object.entries(COUNTRIES).map(([k,c])=>`<button class="cbtn ${k===selCountry?'on':''}" onclick="setCountry('${k}')">${c.flag} ${c.name}</button>`).join('')}</div>`}
+    <div class="cdesc"><b>${CC.flag} ${CC.name}</b> · ${CC.desc}
+      <br><span class="muted">인기 종목: ${GKEYS.filter(g=>CC.pref[g]>=1.05).map(g=>GENRES[g].name).join('·')||'없음'}${CC.asia?' · 🏅 아시안게임 출전국':''}${CC.military?' · 🪖 병역 의무 (아시안게임 금메달 시 특례)':''}</span></div>
     <div class="gacha" id="gacha">
       <div class="gcell fam fam-${fi}" style="grid-column:1/-1"><span class="fe">${r.family.emoji}</span>
         <div><div class="l">가정 환경</div><div class="v">${r.family.name}</div><div class="muted" style="font-size:12.5px">${r.family.desc} · 시작 자금 ${won(r.family.money)}</div></div></div>
@@ -2006,8 +2065,8 @@ function showStart(){
     <label class="muted" style="font-size:13px">닉네임</label>
     <input type="text" id="nick" maxlength="12" placeholder="예: 페이크" value="">
     <div class="btnrow">
-      <button class="primary" onclick="startGame()">🎮 이 인생으로 시작</button>
-      <button class="ghost" onclick="reroll()" ${rerolls<=0?'disabled style="opacity:.4"':''}>🎲 다시 뽑기 (${rerolls})</button>
+      <button class="primary" onclick="startGame()">${daily?'📅 오늘의 시드 시작':'🎮 이 인생으로 시작'}</button>
+      ${daily?'':`<button class="ghost" onclick="reroll()" ${rerolls<=0?'disabled style="opacity:.4"':''}>🎲 다시 뽑기 (${rerolls})</button>`}
       ${saved&&!saved.ended?`<button class="ghost" onclick="loadGame()">▶ 이어하기 (${esc(saved.name)}, ${saved.age}세)</button>`:''}
     </div>
     <p class="muted" style="font-size:12.5px;margin-top:16px">1턴 = 1분기(3개월). 14살부터 랭크를 올려 프로팀 스카우트를 받고, 리그 우승과 월드 챔피언을 노리세요.<br>MOBA·FPS·RTS·격투·배틀로얄 중 주력 장르를 고르고, 커리어 도중 전향도 할 수 있어요. 피로 관리를 잊지 마세요!<br>⭐ 특수훈련은 인생에 5번만 쓸 수 있어요. 결정적인 순간에 쓰세요!</p>
@@ -2017,9 +2076,15 @@ function setCountry(k){ selCountry=k; storeSet('pg_country',k); const n=$('#nick
 function reroll(){ if(rerolls<=0) return; rerolls--; roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; $('#gacha').classList.add('flip'); }
 function startGame(){
   const name = ($('#nick').value.trim() || pick(['새싹','손가락천재','키보드워리어','에임봇','갓겜러'])).slice(0,12);
-  S = newLife(roll, name); attachMeta();
-  hist(`${COUNTRIES[selCountry].flag} ${COUNTRIES[selCountry].name} ${roll.family.name}에서 태어난 게이머 ${name}, 꿈을 꾸기 시작하다`,'key');
-  log(`🍼 ${roll.family.emoji} ${roll.family.name} 출신 ${esc(name)}의 게이머 인생이 시작됐다!`,'','key');
+  if(playMode==='daily'){
+    const P=dailyPack();
+    _rngState=P.state; S=newLife(P.roll, name); S.country=P.country; S.daily=P.date;
+    S.rngState=_rngState; _rngState=null;   // 이제부터 이 인생의 모든 운은 오늘의 시드를 따른다
+    const d=dailyRec(); d.tries++; storeSet('pg_daily', d);
+  } else S = newLife(roll, name);
+  attachMeta();
+  hist(`${CT().flag} ${CT().name} ${S.family.name}에서 태어난 게이머 ${name}, 꿈을 꾸기 시작하다`,'key');
+  log(`${S.daily?`📅 오늘의 시드(${S.daily}) · `:''}🍼 ${S.family.emoji} ${S.family.name} 출신 ${esc(name)}의 게이머 인생이 시작됐다!`,'','key');
   $('#start').classList.add('hide'); $('#game').classList.remove('hide');
   lastLogShown=null; render(); save(); window.scrollTo(0,0);
   if(!storeGet('pg_tut')) showTutorial();
@@ -2099,6 +2164,7 @@ function render(){
       <span class="mini">💰 <b>${won(S.money)}</b></span>
       <span class="mini ${S.fatigue>70?'warn':''}">😵 피로 <b>${Math.round(S.fatigue)}</b></span>
       <span class="mini">⭐ 특훈 <b>${S.special}</b></span>
+      ${S.daily?`<span class="mini hotm">📅 오늘의 시드</span>`:''}
       ${S.injury>0?`<span class="mini bad">🩹 부상 ${S.injury}</span>`:''}
       ${S.slump>0?`<span class="mini warn">🌧️ 슬럼프 ${S.slump}</span>`:''}
     </div>`;
