@@ -17,6 +17,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🎮 건의함')
     .addItem('지금 새 제보 가져오기', 'syncFeedback')
+    .addItem('지금 접속 통계 가져오기', 'syncStats')
     .addItem('처음 설정 (한 번만)', 'setup')
     .addToUi();
 }
@@ -56,9 +57,9 @@ function getSheet_() {
 }
 
 /** Firestore에서 feedback 문서를 모두 읽는다 (관리자 권한) */
-function fetchAll_() {
+function fetchAll_(collection) {
   const token = ScriptApp.getOAuthToken();
-  const base = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/feedback`;
+  const base = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/${collection || 'feedback'}`;
   let docs = [], pageToken = '';
   do {
     const url = base + '?pageSize=300' + (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
@@ -126,5 +127,29 @@ function syncFeedback() {
     return rows.length;
   } finally {
     lock.releaseLock();
+    try { syncStats(); } catch (e) { console.warn('접속 통계 동기화 실패: ' + e); }
   }
+}
+
+/** 날짜별 접속 통계를 '접속 통계' 시트에 정리한다 (최신 날짜가 위) */
+const STATS_SHEET = '접속 통계';
+function syncStats() {
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(STATS_SHEET);
+  if (!sh) sh = ss.insertSheet(STATS_SHEET);
+  const num = (f, k) => f[k] ? Number(f[k].integerValue || 0) : 0;
+  const days = fetchAll_('stats')
+    .map(d => { const f = d.fields || {}; return [d.name.split('/').pop(), num(f, 'visits'), num(f, 'newUsers'), num(f, 'finishes'), num(f, 'dailyPlays')]; })
+    .sort((a, b) => a[0] < b[0] ? 1 : -1);
+  const sum = (i, n) => days.slice(0, n).reduce((a, r) => a + r[i], 0);
+  sh.clear();
+  sh.getRange(1, 1, 1, 6).setValues([['최근 7일 방문자', sum(1, 7), '최근 30일 방문자', sum(1, 30), '누적 완주', sum(3, days.length)]]);
+  sh.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#eef2ff');
+  sh.getRange(3, 1, 1, 5).setValues([['날짜', '방문자', '신규 방문자', '게임 완주', '오늘의 시드 플레이']])
+    .setFontWeight('bold').setBackground('#1f2937').setFontColor('#ffffff');
+  if (days.length) sh.getRange(4, 1, days.length, 5).setValues(days);
+  sh.setFrozenRows(3);
+  [110, 80, 100, 90, 130, 80].forEach((w, i) => sh.setColumnWidth(i + 1, w));
+  sh.getRange('A1').setNote('방문자는 하루에 브라우저 1개를 1명으로 셉니다. 5분마다 자동으로 갱신돼요.');
+  return days.length;
 }

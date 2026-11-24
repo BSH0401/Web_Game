@@ -30,6 +30,18 @@ service cloud.firestore {
         && request.resource.data.date is string && request.resource.data.date.size() <= 20;
       allow read, update, delete: if false;
     }
+    // 날짜별 접속 통계: 숫자를 1씩 올리는 것만 허용하고, 읽기는 Firebase 콘솔(관리자)에서만 가능
+    function statOk(k) {
+      return request.resource.data.get(k, 0) is int
+        && (request.resource.data.get(k, 0) == (resource == null ? 0 : resource.data.get(k, 0))
+         || request.resource.data.get(k, 0) == (resource == null ? 0 : resource.data.get(k, 0)) + 1);
+    }
+    match /stats/{day} {
+      allow create, update: if day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.keys().hasOnly(['visits','newUsers','finishes','dailyPlays'])
+        && statOk('visits') && statOk('newUsers') && statOk('finishes') && statOk('dailyPlays');
+      allow read, delete: if false;
+    }
     match /{document=**} {
       allow read, write: if false;
     }

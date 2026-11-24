@@ -356,6 +356,7 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border
     <p>게임을 사랑하는 14살로 태어나 프로게이머의 인생을 키우는 무료 웹 인생 시뮬레이션 게임입니다. 설치나 회원가입 없이 PC와 모바일 브라우저에서 바로 플레이할 수 있습니다.</p>
     <p>MOBA, FPS, RTS, 격투, 배틀로얄 다섯 장르를 해보며 숨은 재능을 찾고, 솔로랭크로 실력을 쌓아 프로팀 스카우트를 받으세요. 2군에서 1군으로 승격하고, 리그 우승과 월드 챔피언에 도전합니다. 피로와 슬럼프, 악플, 해외 이적, 국가대표 발탁 같은 30여 가지 이벤트가 매번 다른 인생을 만들어 줍니다.</p>
     <p>은퇴한 뒤에는 코치, 해설위원, 스트리머, 사업가 중에서 두 번째 인생을 고르고, 칭호와 인생 연표가 담긴 결과 카드를 친구에게 공유해 보세요.</p>
+    <p style="font-size:12px">게임 개선을 위해 날짜별 방문·완주 횟수만 익명으로 집계해요. 이름·기기 정보 같은 개인정보는 저장하지 않아요.</p>
   </footer>
 </div>
 
@@ -1676,6 +1677,8 @@ function showEnding(){
   if(S.daily && S.daily===today()){ const dr=dailyRec(); if(score>dr.best){ dr.best=score; storeSet('pg_daily', dr); } }
   saveLocalRecord(S.rankRec);
   checkAch(true);
+  if(!S.statDone){ S.statDone=true; bumpStats(S.daily ? ['finishes','dailyPlays'] : ['finishes']); }
+  setTimeout(checkNewVersion, 2500);
   const newAch = (S.newAch||[]).map(id=>ACHS.find(a=>a.id===id)).filter(Boolean);
   const trophies = [
     ...S.trophies.worlds.map(t=>`<div class="trophy">👑 월드 챔피언 — ${t}</div>`),
@@ -1824,7 +1827,7 @@ function copyResult(){
   if(navigator.clipboard) navigator.clipboard.writeText(S.shareText).then(done,()=>prompt('복사하세요',S.shareText));
   else prompt('복사하세요',S.shareText);
 }
-function restart(){ S=null; rerolls=3; roll=rollBirth(); $('#ending').classList.add('hide'); showStart(); }
+function restart(){ S=null; rerolls=3; roll=rollBirth(); $('#ending').classList.add('hide'); showStart(); setTimeout(checkNewVersion, 600); }
 
 /* ================= 랭킹 ================= */
 // Firebase 프로젝트를 만든 뒤 projectId와 apiKey를 넣으면 온라인 랭킹이 켜진다.
@@ -1988,6 +1991,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {v:'2026-11-26.2', items:['📢 게임 중에 업데이트가 나오면, 게임이 끝난 뒤 알려줘요','🔧 게임 개선을 위한 익명 방문 통계']},
   {v:'2026-11-26', items:['📅 오늘의 시드: 매일 모두가 같은 조건·같은 운으로 도전','📅 오늘의 랭킹 탭과 결과 이미지 날짜 표시','🏅 업적 「오늘의 도전자」 추가']},
   {v:'2026-11-25', items:['🔥 살아 움직이는 라이벌: 함께 성장하고 입단·우승·은퇴까지','⚔️ 라이벌 더비와 결승 맞대결, 상대전적','📰 라이벌 소식 뉴스, 회고·엔딩의 나 vs 라이벌 비교','🏅 라이벌 업적 2종 추가']},
   {v:'2026-11-24', items:['🏅 업적 30종 (커리어·도전·수집·재미)','📚 도감: 엔딩·칭호·이벤트 모으기','🔔 게임 중 업적 달성 알림']},
@@ -1999,6 +2003,42 @@ function showUpdates(){
   storeSet('pg_ver', CHANGELOG[0].v);
   return modal({title:'📢 업데이트 소식', html:`<p class="muted" style="margin-top:0">새로 추가된 것들이에요!</p>${html}`, choices:[{label:'확인'}]});
 }
+/* ================= 접속 통계 (날짜별 숫자만, 익명) ================= */
+async function bumpStats(fields){
+  if(!rankOn() || !fields.length) return;
+  const day = today();
+  const doc = `projects/${RANK.projectId}/databases/(default)/documents/stats/${day}`;
+  const body = {writes:[{transform:{document:doc, fieldTransforms:fields.map(f=>({fieldPath:f, increment:{integerValue:'1'}}))}}]};
+  try{ await fetch(`https://firestore.googleapis.com/v1/projects/${RANK.projectId}/databases/(default)/documents:commit?key=${RANK.apiKey}`,
+    {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); }catch(e){}
+}
+function trackVisit(){
+  const day = today();
+  if(storeGet('pg_visit') === day) return;              // 하루에 브라우저당 한 번만
+  const isNew = !(storeGet('pg_visit') || storeGet('pg_ver') || storeGet('pg_records') || storeGet('pg_save') || storeGet('pg_tut'));
+  storeSet('pg_visit', day);
+  bumpStats(isNew ? ['visits','newUsers'] : ['visits']);
+}
+
+/* ================= 새 버전 감지: 게임 중에는 기다렸다가, 끝나면 알려준다 ================= */
+async function checkNewVersion(){
+  if(S && !S.ended) return;                              // 플레이 중에는 방해하지 않는다
+  if($('#modal').classList.contains('show') || !$('#recap').classList.contains('hide')) return;
+  try{
+    const r = await fetch(`version.json?t=${Date.now()}`, {cache:'no-store'});
+    if(!r.ok) return;
+    const j = await r.json();
+    if(!j.v || j.v <= CHANGELOG[0].v || storeGet('pg_newver_shown') === j.v) return;
+    if((S && !S.ended) || $('#modal').classList.contains('show')) return;
+    storeSet('pg_newver_shown', j.v);
+    const i = await modal({title:'📢 새 업데이트가 나왔어요!', html:`<p class="muted" style="margin-top:0">${esc(j.v)}</p>
+      <ul class="tut-list">${(j.items||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+      <p class="muted">새로고침하면 바로 적용돼요. 진행 기록과 도감은 그대로 남아요.</p>`,
+      choices:[{label:'🔄 지금 새로고침'},{label:'나중에'}]});
+    if(i===0){ storeSet('pg_ver', j.v); location.reload(); }
+  }catch(e){}
+}
+
 function maybeShowUpdates(){
   const latest=CHANGELOG[0].v, seen=storeGet('pg_ver');
   const returning = seen || storeGet('pg_save') || storeGet('pg_records') || storeGet('pg_best');
@@ -2219,7 +2259,10 @@ async function chooseGenreBtn(){ if(busy) return; busy=true; await chooseGenre(f
 /* ================= 시작 ================= */
 roll = rollBirth();
 showStart();
+trackVisit();
 setTimeout(maybeShowUpdates, 400);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkNewVersion(); });
+setInterval(checkNewVersion, 10*60*1000);
 </script>
 </body>
 </html>
