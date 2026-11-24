@@ -221,6 +221,10 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 .chg ul{margin:0;padding-left:18px;line-height:1.7;font-size:14px}
 .linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:12.5px;padding:0}
 .modal[data-kind=col]{max-width:760px}
+.rvcard{margin-top:10px;background:linear-gradient(135deg,#2a1620,var(--panel2));border:1px solid #6b2f40;border-radius:11px;padding:8px 10px;font-size:12.5px;line-height:1.55}
+.rvcard .t{display:flex;justify-content:space-between;gap:6px;font-size:13px}
+.rvcmp{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:4px 8px;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:13.5px;text-align:center}
+.rvcmp > :nth-child(3n+1){text-align:left}
 .colhead{display:flex;justify-content:space-between;font-size:13px}
 .achh{margin:12px 0 6px;font-size:13px;color:var(--muted)}
 .achgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px}
@@ -733,6 +737,8 @@ async function endOfTurn(){
     S.tier='1군'; markPro(); S.seed=99; hist(`${S.team.name} 1군 승격!`,'key');
     await info('⬆️ 1군 승격!', `<p>감독이 불렀다. "다음 시즌부터 1군 주전이다."</p><p><b>${esc(S.team.name)}</b> 1군 데뷔!</p>`, 'win');
   }
+  // 라이벌
+  rivalTurn();
   // 국제대회
   await internationalStep();
   if(S.ended) return;
@@ -755,7 +761,7 @@ async function endOfTurn(){
 }
 
 async function newYear(){
-  S.age++; S.yearChamp=false;
+  S.age++; S.yearChamp=false; rivalYear();
   if(S.age>=23){ S.phys = clamp(S.phys - (S.age-22)*2); }
   if(S.age>=24){ S.mental = clamp(S.mental - 1); }
   if(S.age>=26){ S.health = clamp(S.health-2); }
@@ -790,6 +796,7 @@ async function newYear(){
 async function milestones(){
   // 주력 장르 결정
   if(!S.genre && S.age>=16){ await chooseGenre(true); }
+  if(S.genre && S.age>=16 && !S.flags.rivalMet && !S.ended) await rivalIntro();
   // 입단 테스트
   if(S.genre && !S.team && S.age>=16 && S.mmr[S.genre]>=TRYOUT_MMR && S.turn>=S.tryCool) await tryout();
 }
@@ -805,7 +812,7 @@ async function chooseGenre(forced){
   const i = await modal({title:'🎯 주력 장르 선택', html:`<p>${forced?'열여섯 살. 이제 한 길을 정해야 할 때다.':'어떤 게임으로 프로를 노릴까?'}</p>${mil}${html}`, choices});
   if(i>=GKEYS.length) return;
   const g=GKEYS[i];
-  S.genre=g; S.careerGenres.push(g); hist(`${GENRES[g].game}(${GENRES[g].name})를 주력 장르로 결정`,'key');
+  S.genre=g; S.careerGenres.push(g); if(S.rv && !S.rv.genre) S.rv.genre=g; hist(`${GENRES[g].game}(${GENRES[g].name})를 주력 장르로 결정`,'key');
   log(`🎯 주력 장르: ${GENRES[g].game}`,'','key');
 }
 
@@ -878,9 +885,126 @@ async function featured(opp, stage, bo, weight=1, nat=null){
     ${pog?'<p class="pog">🌟 POG(Player of the Game) 선정!</p>':''}`, choices:[{label:'계속'}], kind: win?'win':'lose'});
   return win;
 }
+/* ================= 라이벌 ================= */
+function newRival(){
+  return {name:S.rival||pick(RIVALS), genre:null, pw:ri(16,26), cap:rand(64,88), peak:0, team:null, tier:null,
+    trophies:{league:[],worlds:[]}, h2h:{w:0,l:0}, retired:false, mil:0, milDone:false, yearChamp:false, after:'', news:[]};
+}
+function rvNews(t, show=true){
+  const R=S.rv; R.news.push({age:S.age, text:t});
+  if(S.flags.rivalMet && show) log(`📰 ${t}`,'','news');
+}
+const rvActive = () => S.rv && !S.rv.retired && !S.rv.mil;
+const rvSameLeague = () => rvActive() && S.rv.tier==='1군' && S.genre===S.rv.genre && S.tier==='1군' && !S.abroad && S.rv.team && S.team && S.rv.team.name!==S.team.name;
+function rvAfter(){
+  const R=S.rv;
+  if(R.trophies.worlds.length) return '명문팀 감독';
+  if(R.trophies.league.length>=2) return '해설위원';
+  if(R.tier==='1군') return '인기 스트리머';
+  return '평범한 직장인';
+}
+/** 매 턴: 라이벌 성장·입단·승격·시즌 결과 */
+function rivalTurn(){
+  const R=S.rv; if(!R || R.retired) return;
+  if(R.mil>0){ R.mil--; if(!R.mil){ R.pw=Math.max(5,R.pw-8); rvNews(`🎖️ 라이벌 ${R.name} 선수가 전역하고 복귀를 선언했다`); } return; }
+  const age=S.age;
+  if(age<23) R.pw += (R.cap-R.pw)*.075 + rand(-1,1.5);
+  else R.pw -= (R.genre==='fps'?.35:.2)*(age-22) + rand(-.6,.6);
+  R.pw = clamp(R.pw, 5, 99); R.peak = Math.max(R.peak, R.pw);
+  if(!R.genre) return;
+  if(!R.team && age>=16 && R.pw>=46){
+    const all=teamsFor(R.genre).filter(t=>!S.team||t.name!==S.team.name);
+    const t=all.filter(t=>t.rating<=R.pw+18).sort((a,b)=>b.rating-a.rating)[0] || all[all.length-1];
+    R.team={name:t.name, rating:t.rating}; R.tier = R.pw>=t.rating-8 ? '1군' : '2군';
+    rvNews(`라이벌 ${R.name} 선수, ${t.name} ${R.tier} 입단`);
+  } else if(R.tier==='2군' && R.pw>=R.team.rating-8){
+    R.tier='1군'; rvNews(`라이벌 ${R.name} 선수, ${R.team.name} 1군 승격`);
+  } else if(R.tier==='1군' && S.q===0 && R.pw>R.team.rating+4){
+    // 실력이 팀보다 좋아지면 더 강한 팀으로 이적
+    const up=teamsFor(R.genre).filter(t=>t.rating>R.team.rating && t.rating<=R.pw+10 && (!S.team||t.name!==S.team.name)).sort((a,b)=>b.rating-a.rating)[0];
+    if(up && chance(.4)){ rvNews(`라이벌 ${R.name} 선수, ${R.team.name} → ${up.name} 이적`); R.team={name:up.name, rating:up.rating}; }
+  }
+  // 시즌 결과 (내 플레이오프가 끝난 뒤 계산)
+  if(R.tier==='1군' && (S.q===1 || S.q===3)){
+    const nm = S.q===1 ? '스프링' : '서머';
+    const blocked = S.genre===R.genre && S.lastChamp===`${age}-${nm}` && !S.abroad;   // 같은 리그에 우승팀은 하나
+    const str = .6*R.team.rating + .4*R.pw;
+    if(!blocked && S.rvLostFinal!==`${age}-${nm}` && chance(clamp(1/(1+Math.exp(-(str-78)/5))*.32, .01, .3))){
+      R.trophies.league.push(`${age}세 ${nm}`); R.yearChamp=true;
+      rvNews(`🏆 라이벌 ${R.name} 선수의 ${R.team.name}, ${nm} 우승!`);
+    }
+    if(S.q===3 && R.yearChamp && S.lastWorlds!==age && chance(clamp(.1+(R.pw-72)/100,.03,.25))){
+      R.trophies.worlds.push(`${age}세`); rvNews(`🌍 라이벌 ${R.name} 선수, 월드 챔피언 등극!`);
+    }
+  }
+}
+/** 매년: 연간 초기화·병역·은퇴 */
+function rivalYear(){
+  const R=S.rv; if(!R || R.retired) return;
+  R.yearChamp=false;
+  if(S.country==='KR' && !R.milDone && !R.mil && R.genre && (S.age===27 || (S.age===26 && chance(.6)))){
+    R.milDone=true; R.mil=6; R.team=null; R.tier=null;
+    rvNews(`🪖 라이벌 ${R.name} 선수가 입대했다`); return;
+  }
+  if(S.age>=27 && !R.mil && chance(.12*(S.age-26))){
+    R.retired=true; R.after=rvAfter();
+    rvNews(`👋 라이벌 ${R.name} 선수 은퇴. 앞으로는 ${R.after}(으)로 활동한다`);
+  }
+}
+function rvOpp(){
+  const R=S.rv;
+  return {name:`🔥 ${R.team.name}`, rating:Math.round(.55*R.team.rating+.45*R.pw)-2, rival:true};   // 라이벌은 나를 상대로 더 집중한다
+}
+function rvRecord(win, where){
+  const R=S.rv;
+  win ? R.h2h.w++ : R.h2h.l++;
+  if(win) hist(`${where}에서 라이벌 ${R.name} 선수에게 완승`,'good');
+  else hist(`${where}에서 라이벌 ${R.name} 선수에게 패배`,'bad');
+}
+async function rivalIntro(){
+  const R=S.rv; S.flags.rivalMet=true;
+  if(!R.genre) R.genre=S.genre;
+  R.pw = Math.max(R.pw, pw()*rand(.9,1.15));
+  const i = await modal({title:'🔥 라이벌 등장', html:`
+    <p>같은 ${GENRES[R.genre].game} 랭커 중에 동갑내기 천재 <b>'${esc(R.name)}'</b> 선수가 혜성처럼 나타났다.</p>
+    <p class="muted">커뮤니티는 벌써 둘을 비교하기 시작했다. 이제부터 라이벌의 소식이 📰 뉴스로 들려오고, 프로 무대에서 맞붙게 된다.</p>
+    <div class="vs"><span>${CT().flag} ${esc(S.name)}<br><small class="muted">전투력 ${Math.round(pw())}</small></span><span class="mid">VS</span><span>${CT().flag} ${esc(R.name)}<br><small class="muted">전투력 ${Math.round(R.pw)}</small></span></div>`,
+    choices:[{label:'🔥 반드시 이긴다!', desc:'숙련도↑ 피로↑'},{label:'🧘 나는 내 길을 간다', desc:'멘탈↑'}], kind:'event'});
+  hist(`라이벌 '${R.name}' 선수 등장`,'key');
+  if(i===0){ S.flags.rival=true; fx({skill:3,fatigue:10,mental:2}); log('🔥 라이벌을 의식하며 연습량을 두 배로 늘렸다.','','key'); }
+  else { fx({mental:5}); log('🧘 남과 비교하지 않기로 했다.','',''); }
+}
+function rivalCard(){
+  const R=S.rv; if(!R || !S.flags.rivalMet) return '';
+  const st = R.retired ? `은퇴 · ${R.after}` : R.mil ? '군 복무 중 🪖' : R.team ? `${R.team.name} ${R.tier}` : '프로 준비 중';
+  const diff = Math.round(pw()-R.pw);
+  return `<div class="rvcard"><div class="t"><span>🔥 라이벌 <b>${esc(R.name)}</b></span><span class="muted">${st}</span></div>
+    <div class="muted">${R.genre&&R.genre!==S.genre?`${GENRES[R.genre].icon} ${GENRES[R.genre].name} · `:''}전투력 ${Math.round(R.pw)} (나 ${diff>=0?'+':''}${diff})</div>
+    <div>🏆 ${R.trophies.league.length} · 🌍 ${R.trophies.worlds.length} · 상대전적 <b>${R.h2h.w}승 ${R.h2h.l}패</b></div></div>`;
+}
+const myWins = () => S.trophies.league.length + S.trophies.worlds.length*3;
+const rvWins = () => S.rv ? S.rv.trophies.league.length + S.rv.trophies.worlds.length*3 : 0;
+function rivalVerdict(){
+  const a=myWins(), b=rvWins();
+  return a>b ? '🏅 승자는 나! 라이벌보다 더 많은 영광을 누렸다' : a<b ? '😤 라이벌이 한 수 위였다… 그래도 서로가 있어 더 강해졌다' : '🤝 막상막하. 둘 다 시대를 대표하는 선수였다';
+}
+function rivalEndHtml(){
+  const R=S.rv; if(!R || !S.flags.rivalMet) return '';
+  return `<h3 style="margin:14px 0 6px">🔥 나 vs 라이벌 ${esc(R.name)}</h3>
+    <div class="rvcmp"><div></div><b>나</b><b>${esc(R.name)}</b>
+      <div class="muted">리그 우승</div><div>${S.trophies.league.length}</div><div>${R.trophies.league.length}</div>
+      <div class="muted">월드 우승</div><div>${S.trophies.worlds.length}</div><div>${R.trophies.worlds.length}</div>
+      <div class="muted">최고 전투력</div><div>${Math.round(S.peakPw||pw())}</div><div>${Math.round(R.peak||R.pw)}</div>
+      <div class="muted">상대전적</div><div>${R.h2h.w}승</div><div>${R.h2h.l}승</div></div>
+    <div class="muted" style="font-size:13px;margin-top:4px">${rivalVerdict()} · 라이벌은 ${R.retired?`은퇴 후 ${R.after}`:'아직 현역'}</div>`;
+}
+
 async function regularSeason(name){
   let w=0,l=0;
-  (await featured(randomOpp(), `${name} 정규시즌 빅매치`, 3)) ? w++ : l++;
+  if(rvSameLeague() && chance(.55)){
+    const win = await featured(rvOpp(), `${name} 라이벌 더비 🔥`, 3, 1.5);
+    win ? w++ : l++; rvRecord(win, `${name} 라이벌 더비`);
+  } else (await featured(randomOpp(), `${name} 정규시즌 빅매치`, 3)) ? w++ : l++;
   for(let i=0;i<6;i++){ const aw=autoWin(randomOpp()); aw ? (w++, S.mw++) : (l++, S.ml++); }
   S.seasons++;
   S.seed = w>=6?1 : w>=5?2 : w>=4?ri(3,4) : w>=3?ri(5,6) : ri(7,8);
@@ -893,9 +1017,16 @@ async function playoffs(name){
   if(!(await featured(randomOpp(), `${name} 플레이오프 4강`, 5, 2))){ log(`${name} 4강 탈락`,'','bad'); return; }
   const fin={name:pick(teamsFor(S.genre).filter(x=>x.name!==S.team.name).slice(0,3)).name, rating:ri(74,84)+leagueOff(S.genre)};
   if(S.abroad) fin.name=pick(WORLD.filter(x=>x!==S.team.name));
-  if(!(await featured(fin, `${name} 결승전`, 5, 3))){
+  const rvFinal = rvSameLeague() && chance(.5);
+  const finOpp = rvFinal ? rvOpp() : fin;
+  const finWin = await featured(finOpp, `${name} 결승전${rvFinal?' · 라이벌전 🔥':''}`, 5, 3);
+  if(rvFinal) rvRecord(finWin, `${name} 결승`);
+  if(!finWin){
+    if(rvFinal){ S.rv.trophies.league.push(`${S.age}세 ${name}`); S.rv.yearChamp=true; S.rvLostFinal=`${S.age}-${name}`;
+      rvNews(`🏆 라이벌 ${S.rv.name} 선수의 ${S.rv.team.name}, ${name} 우승! (결승에서 나를 꺾었다)`); }
     hist(`${name} 준우승`,'good'); log(`🥈 ${name} 준우승`,'','good'); return;
   }
+  S.lastChamp=`${S.age}-${name}`;
   const label=`${S.age}세 ${name} (${GENRES[S.genre].game})`;
   S.trophies.league.push(label); if(!S.champGenres.includes(S.genre)) S.champGenres.push(S.genre);
   S.yearChamp=true; S.money+=1000; S.earned+=1000; S.pop=clamp(S.pop+12);
@@ -912,7 +1043,7 @@ async function worlds(){
       hist(`월드 챔피언십 ${st} 진출`,'good'); log(`🌍 월드 챔피언십 ${st}에서 탈락`,'',''); return;
     }
   }
-  S.trophies.worlds.push(`${S.age}세 (${GENRES[S.genre].game})`);
+  S.trophies.worlds.push(`${S.age}세 (${GENRES[S.genre].game})`); S.lastWorlds=S.age;
   if(!S.champGenres.includes(S.genre)) S.champGenres.push(S.genre);
   S.money+=5000; S.earned+=5000; S.pop=clamp(S.pop+25); S.mental=clamp(S.mental+10);
   hist('🌍 월드 챔피언 등극!!','key'); log('🌍 월드 챔피언!!','','key');
@@ -1083,9 +1214,6 @@ const EVENTS = [
  {id:'coach', cond:()=>!!S.team, title:'📋 코치의 혹평', text:'"요즘 플레이가 너무 안일해." 코치가 VOD를 틀어놓고 지적한다.', choices:[
    {label:'겸허히 받아들인다', run:()=>{ fx({macro:4,mental:-3}); return '아프지만 맞는 말이었다.'; }},
    {label:'"제 판단이 맞았어요"', run:()=>{ if(chance(S.mental/130)){ fx({mental:4}); return '코치가 고개를 끄덕였다. "그래, 네 근거도 일리가 있다."'; } fx({teamBonus:-2,mental:-2}); return '코치와 사이가 어색해졌다.'; }}]},
- {id:'rival', once:true, cond:()=>!!S.genre&&S.age>=16, title:'🔥 라이벌 등장', text:()=>`동갑내기 천재 '${S.rival}'가 혜성처럼 나타났다. 모두가 둘을 비교한다.`, choices:[
-   {label:'반드시 이긴다!', run:()=>{ S.flags.rival=true; hist(`라이벌 '${S.rival}'와의 경쟁 시작`,'key'); fx({skill:3,fatigue:10,mental:2}); return '불타오른다. 연습량을 두 배로 늘렸다.'; }},
-   {label:'나는 내 길을 간다', run:()=>{ fx({mental:5}); return '남과 비교하지 않기로 했다.'; }}]},
  {id:'abroad', cond:()=>S.tier==='1군'&&!S.abroad&&pw()>=62&&S.age>=19, title:'✈️ 해외 이적 제의', text:'해외 명문팀에서 거액의 오퍼가 왔다! (연봉 약 2배)', choices:[
    {label:'해외로 간다', run:()=>{ const n=pick(WORLD); const from=S.team.name; S.team={name:n,rating:ri(72,84)}; S.abroad=true; S.flags.wentAbroad=true; S.salaryMul=2; S.teamBonus=0; S.seed=99; hist(`${from} → ${n} 해외 이적`,'key'); fx({pop:4,mental:-3}); return `${n} 유니폼을 입었다. 낯선 환경이지만 설렌다.`; }},
    {label:'의리를 지킨다', run:()=>{ fx({pop:8,mental:3,teamBonus:2}); return '"원클럽맨" 팬들이 열광했다!'; }}]},
@@ -1192,7 +1320,7 @@ const EVENTS = [
  {id:'back_pain', cond:()=>S.age>=23&&S.fatigue>=40&&S.injury===0, title:'🪑 허리 통증', text:'오래 앉아 있었더니 허리가 찌릿하다.', choices:[
    {label:'재활 치료 (-100만원)', disabled:()=>S.money<100, run:()=>{ fx({money:-100,health:8,fatigue:-10}); return '꾸준히 스트레칭을 하니 한결 나아졌다.'; }},
    {label:'참고 연습한다', run:()=>{ if(chance(.35)){ S.injury=1; hist('허리 부상','bad'); fx({phys:-2}); return '결국 허리를 삐끗했다. 한동안 쉬어야 한다.'; } fx({fatigue:5}); return '다행히 큰 문제는 없었다.'; }}]},
- {id:'rival_game', cond:()=>!!S.genre&&!!S.flags.rival, title:'⚔️ 라이벌과의 맞대결', text:()=>`라이벌 '${S.rival}' 선수와의 경기가 다가온다. 언론이 둘을 비교하는 기사를 쏟아낸다.`, choices:[
+ {id:'rival_game', cond:()=>!!S.genre&&!!S.flags.rivalMet&&rvActive()&&S.rv.genre===S.genre, title:'⚔️ 라이벌과의 맞대결', text:()=>`라이벌 '${S.rival}' 선수와의 경기가 다가온다. 언론이 둘을 비교하는 기사를 쏟아낸다.`, choices:[
    {label:'도발에 응한다', run:()=>{ if(chance(clamp((pw()-50)/40,.2,.8))){ fx({pop:8,mental:6}); hist(`라이벌 ${S.rival} 선수에게 완승`,'good'); return `'${S.rival}' 선수를 완벽하게 눌렀다! "역시 이쪽이 한 수 위"라는 평이다.`; } fx({pop:2,mental:-5}); return `'${S.rival}' 선수에게 졌다. 분하다. 다음엔 반드시…`; }},
    {label:'조용히 준비한다', run:()=>{ fx({skill:3}); return '말 대신 실력으로 보여주자.'; }}]},
  {id:'fan_letter', cond:()=>S.pop>=20, title:'💌 팬레터', text:'"힘들 때 선수님 경기를 보며 버텼어요." 손편지 한 통이 도착했다.', choices:[
@@ -1307,6 +1435,17 @@ function buildRecapSlides(){
     <div class="rc-h">${tro.length ? `트로피 ${tro.length}개` : '빈 트로피 진열장'}</div>
     ${tro.length ? `<div class="rc-trophies">${shown.map((x,i)=>`<div class="${x.cls}" style="animation-delay:${.25+i*.32}s"><span class="ic">${x.ic}</span>${x.name}<br><small>${esc(x.t)}</small></div>`).join('')}</div>${more>0?`<div class="rc-sub">외 ${more}개</div>`:''}`
       : '<div class="rc-sub">트로피는 없었지만, 꿈을 향한 도전만큼은 진짜였다.</div>'}`});
+  // 5-2. 라이벌
+  if(S.flags.rivalMet && S.rv){
+    const Rv=S.rv;
+    slides.push({ms:5200, html:`<div class="rc-kicker">RIVAL</div><div class="rc-h">평생의 라이벌, ${esc(Rv.name)}</div>
+      <div class="rc-grid" style="grid-template-columns:repeat(3,1fr);max-width:480px;margin:0 auto">
+        <div style="animation-delay:.1s"><span>&nbsp;</span><b style="font-size:18px">나</b></div><div style="animation-delay:.1s"><span>&nbsp;</span><b style="font-size:18px">vs</b></div><div style="animation-delay:.1s"><span>&nbsp;</span><b style="font-size:18px">${esc(Rv.name)}</b></div>
+        <div style="animation-delay:.4s"><b>${S.trophies.league.length}</b><span>리그</span></div><div style="animation-delay:.4s"><span>리그 우승</span></div><div style="animation-delay:.4s"><b>${Rv.trophies.league.length}</b><span>리그</span></div>
+        <div style="animation-delay:.7s"><b>${S.trophies.worlds.length}</b><span>월드</span></div><div style="animation-delay:.7s"><span>월드 우승</span></div><div style="animation-delay:.7s"><b>${Rv.trophies.worlds.length}</b><span>월드</span></div>
+        <div style="animation-delay:1s"><b>${Rv.h2h.w}</b><span>승</span></div><div style="animation-delay:1s"><span>상대전적</span></div><div style="animation-delay:1s"><b>${Rv.h2h.l}</b><span>승</span></div>
+      </div><div class="rc-sub">${rivalVerdict()}</div>`});
+  }
   // 6. 피날레
   slides.push({final:true, html:`<div class="rc-kicker">LEGACY</div>
     <div class="rc-sub" style="margin-bottom:16px">${esc(S.name)}, 사람들은 이렇게 기억한다</div>
@@ -1386,6 +1525,7 @@ const ACHS = [
   {id:'dual', cat:'challenge', ic:'⚔️', name:'장르 파괴자', desc:'두 장르에서 우승', test:()=>S.champGenres.length>=2},
   {id:'switcher', cat:'challenge', ic:'🔄', name:'새로운 도전', desc:'장르 전향하기', test:()=>!!S.switched},
   {id:'abroad', cat:'challenge', ic:'✈️', name:'해외파', desc:'해외 팀으로 이적하기', test:()=>!!S.flags.wentAbroad},
+  {id:'rivalbetter', cat:'challenge', ic:'🥊', name:'내가 더 위대했다', desc:'라이벌보다 더 많은 우승을 하고 은퇴', end:true, test:()=>!!S.flags.rivalMet&&myWins()>rvWins()&&myWins()>0},
   // 수집 (여러 인생에 걸쳐)
   {id:'allcountry', cat:'collect', ic:'🌏', name:'세계 일주', desc:'6개 나라 모두로 1군 데뷔', meta:true, test:c=>Object.keys(c.countries).length>=6},
   {id:'allgenre', cat:'collect', ic:'🎮', name:'올라운더', desc:'5개 장르 모두로 1군 데뷔', meta:true, test:c=>Object.keys(c.genres).length>=5},
@@ -1394,6 +1534,7 @@ const ACHS = [
   // 재미
   {id:'scammed', cat:'fun', ic:'😵', name:'사회 초년생', desc:'입단 테스트 사기 당하기', test:()=>H(/사기 피해/)},
   {id:'rivalwin', cat:'fun', ic:'🔥', name:'라이벌 격파', desc:'라이벌 맞대결에서 완승', test:()=>H(/라이벌 .* 완승/)},
+  {id:'rivalh2h', cat:'fun', ic:'⚔️', name:'숙명의 맞대결', desc:'라이벌과 공식전에서 10번 만나기', test:()=>!!S.rv&&S.rv.h2h.w+S.rv.h2h.l>=10},
   {id:'arcade', cat:'fun', ic:'🕹️', name:'오락실의 전설', desc:'오락실의 전설을 꺾기', test:()=>H(/오락실의 전설을 꺾다/)},
 ];
 const ENDINGS = ['명장 감독','코치','국민 해설','해설위원','은퇴 후 대박 스트리머','인기 스트리머','소소한 스트리머','e스포츠 구단주','PC방 사장님','대기업 직장인','평범한 직장인','인생 2회차 준비 중'];
@@ -1541,6 +1682,7 @@ function showEnding(){
       <div class="gcell"><div class="l">총 수입</div><div class="v">${won(S.earned)}</div></div>
     </div>
     <h3 style="margin:10px 0 4px">🏆 우승 기록</h3>${trophies}
+    ${rivalEndHtml()}
     <h3 style="margin:14px 0 6px">🏅 이번 인생에서 얻은 업적 (${newAch.length})</h3>
     ${newAch.length ? `<div class="achgrid">${newAch.map(a=>`<div class="achc new"><span class="ai">${a.ic}</span><div><b>${a.name}</b><small>${a.desc}</small></div></div>`).join('')}</div>` : '<div class="muted">이번엔 새 업적이 없어요. 도감에서 남은 목표를 확인해 보세요!</div>'}
     <button class="linkbtn" style="margin-top:6px" onclick="showCollection()">📚 도감 보기 (수집률 ${colStats().pct}%)</button>
@@ -1808,6 +1950,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {v:'2026-11-25', items:['🔥 살아 움직이는 라이벌: 함께 성장하고 입단·우승·은퇴까지','⚔️ 라이벌 더비와 결승 맞대결, 상대전적','📰 라이벌 소식 뉴스, 회고·엔딩의 나 vs 라이벌 비교','🏅 라이벌 업적 2종 추가']},
   {v:'2026-11-24', items:['🏅 업적 30종 (커리어·도전·수집·재미)','📚 도감: 엔딩·칭호·이벤트 모으기','🔔 게임 중 업적 달성 알림']},
   {v:'2026-10-29', items:['🖼️ 결과 이미지 저장·공유 (카카오톡·인스타그램)','📘 첫 플레이 안내와 ❓ 도움말','🎲 나라·장르별 새 이벤트 20여 종']},
   {v:'2026-10-25', items:['🌏 국적 선택 (한국·중국·일본·미국·독일·브라질)','🏅 아시안게임 · 🌐 네이션스컵 국가대표','🪖 한국 병역 (아시안게임 금메달 시 특례)','🎬 은퇴 커리어 회고 연출','⭐ 특수훈련 · 🏆 온라인 랭킹 · 💬 건의·버그 제보','🎨 화면 전체 개편']},
@@ -1888,6 +2031,8 @@ function attachMeta(){
   S.apt = {...perG(()=>rand(.8,1.25)), ...S.apt};
   if(!S.careerGenres) S.careerGenres = S.genre ? [S.genre] : [];
   if(S.special==null) S.special = 5;
+  if(!S.rv){ S.rv = newRival(); if(S.genre){ S.rv.genre=S.genre; S.rv.pw=Math.max(S.rv.pw, pw()*rand(.85,1.1)); }
+    if(S.flags.rival) S.flags.rivalMet=true; }
   if(S.mw==null){ S.mw=0; S.ml=0; }
   if(S.peakPw==null) S.peakPw=0;
   if(!S.country || !COUNTRIES[S.country]) S.country='KR';
@@ -1965,7 +2110,7 @@ function render(){
     <div class="bars">${bar('🖐️ 피지컬',S.phys,'phys')}${bar('🧠 운영',S.macro,'macro')}${bar('💎 멘탈',S.mental,'mental')}${bar('💪 체력',S.health,'health')}${bar('⭐ 인기',S.pop,'pop')}${bar('📚 학업',S.edu,'edu')}${bar('😵 피로',S.fatigue,'fatigue')}</div>
     <div class="genres">${S.genre
       ? genreBox(S.genre) + `<details class="others"><summary>다른 장르 ${others.length}개 보기</summary>${others.map(genreBox).join('')}</details>`
-      : GKEYS.map(genreBox).join('')}</div>`;
+      : GKEYS.map(genreBox).join('')}</div>${rivalCard()}`;
   // 목표
   const G0 = goalInfo();
   let warn = S.injury>0 ? '🩹 부상 중이라 랭크와 팀 연습을 할 수 없어요.' : S.fatigue>70 ? '⚠️ 피로가 높아요. 계속 무리하면 슬럼프나 부상이 올 수 있어요.' : '';
