@@ -138,18 +138,22 @@ function syncStats() {
   let sh = ss.getSheetByName(STATS_SHEET);
   if (!sh) sh = ss.insertSheet(STATS_SHEET);
   const num = (f, k) => f[k] ? Number(f[k].integerValue || 0) : 0;
+  const SRC = ['srcGoogle', 'srcNaver', 'srcKakao', 'srcSns', 'srcShare', 'srcDirect', 'srcOther'];
+  const SRC_NAMES = ['구글', '네이버', '카카오톡', 'SNS·커뮤니티', '결과 공유', '직접 접속', '기타 사이트'];
   const days = fetchAll_('stats')
-    .map(d => { const f = d.fields || {}; return [d.name.split('/').pop(), num(f, 'visits'), num(f, 'newUsers'), num(f, 'finishes'), num(f, 'dailyPlays')]; })
+    .map(d => { const f = d.fields || {}; return [d.name.split('/').pop(), num(f, 'visits'), num(f, 'newUsers'), num(f, 'finishes'), num(f, 'dailyPlays'), ...SRC.map(k => num(f, k))]; })
     .sort((a, b) => a[0] < b[0] ? 1 : -1);
   const sum = (i, n) => days.slice(0, n).reduce((a, r) => a + r[i], 0);
   sh.clear();
   sh.getRange(1, 1, 1, 6).setValues([['최근 7일 방문자', sum(1, 7), '최근 30일 방문자', sum(1, 30), '누적 완주', sum(3, days.length)]]);
   sh.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#eef2ff');
-  sh.getRange(3, 1, 1, 5).setValues([['날짜', '방문자', '신규 방문자', '게임 완주', '오늘의 시드 플레이']])
-    .setFontWeight('bold').setBackground('#1f2937').setFontColor('#ffffff');
-  if (days.length) sh.getRange(4, 1, days.length, 5).setValues(days);
+  // 2행: 최근 7일 유입 경로 합계
+  sh.getRange(2, 1, 1, 1 + SRC.length).setValues([['최근 7일 유입 →', ...SRC_NAMES.map((n, i) => `${n} ${sum(5 + i, 7)}`)]]).setFontColor('#4b5563');
+  const head = ['날짜', '방문자', '신규 방문자', '게임 완주', '오늘의 시드 플레이', ...SRC_NAMES];
+  sh.getRange(3, 1, 1, head.length).setValues([head]).setFontWeight('bold').setBackground('#1f2937').setFontColor('#ffffff');
+  if (days.length) sh.getRange(4, 1, days.length, head.length).setValues(days);
   sh.setFrozenRows(3);
-  [110, 80, 100, 90, 130, 80].forEach((w, i) => sh.setColumnWidth(i + 1, w));
+  [110, 80, 100, 90, 130, 80, 80, 90, 120, 90, 90, 100].forEach((w, i) => sh.setColumnWidth(i + 1, w));
   sh.getRange('A1').setNote('방문자는 하루에 브라우저 1개를 1명으로 셉니다. 5분마다 자동으로 갱신돼요.');
   return days.length;
 }

@@ -38,8 +38,9 @@ service cloud.firestore {
     }
     match /stats/{day} {
       allow create, update: if day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && request.resource.data.keys().hasOnly(['visits','newUsers','finishes','dailyPlays'])
-        && statOk('visits') && statOk('newUsers') && statOk('finishes') && statOk('dailyPlays');
+        && request.resource.data.keys().hasOnly(['visits','newUsers','finishes','dailyPlays','srcGoogle','srcNaver','srcKakao','srcSns','srcShare','srcDirect','srcOther'])
+        && statOk('visits') && statOk('newUsers') && statOk('finishes') && statOk('dailyPlays')
+        && statOk('srcGoogle') && statOk('srcNaver') && statOk('srcKakao') && statOk('srcSns') && statOk('srcShare') && statOk('srcDirect') && statOk('srcOther');
       allow read, delete: if false;
     }
     match /{document=**} {

@@ -1861,7 +1861,7 @@ function showEnding(){
     <button class="primary" style="width:100%;margin-top:10px;background:linear-gradient(90deg,var(--gold),#ff9f6b);color:#241500" onclick="showShareImage()">🖼️ 결과 이미지 만들기 (저장·공유)</button>
   </div>`;
   S.endInfo = {title, sub, score};
-  S.shareText = `🎮 프로게이머 키우기${S.daily?` · 📅 오늘의 시드 ${S.daily}`:''}\n${CT().flag} ${S.name} (14~${S.age}세)\n칭호: ${title} / 은퇴 후: ${sub}\n월드 우승 ${S.trophies.worlds.length}회 · 리그 우승 ${S.trophies.league.length}회 · 최고 ${tierOf(S.peakMmr)}\n인생 점수 ${score.toLocaleString()}점`;
+  S.shareText = `🎮 프로게이머 키우기${S.daily?` · 📅 오늘의 시드 ${S.daily}`:''}\n${CT().flag} ${S.name} (14~${S.age}세)\n칭호: ${title} / 은퇴 후: ${sub}\n월드 우승 ${S.trophies.worlds.length}회 · 리그 우승 ${S.trophies.league.length}회 · 최고 ${tierOf(S.peakMmr)}\n인생 점수 ${score.toLocaleString()}점\n👉 https://bsh0401.github.io/Web_Game/?from=share`;
   storeSet('pg_save', null);
   $('#game').classList.add('hide'); $('#ending').classList.remove('hide'); $('#status').innerHTML='';
   window.scrollTo(0,0);
@@ -1964,7 +1964,7 @@ async function showShareImage(){
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
   } else if(pickd.includes('공유')){
-    try{ await navigator.share({files:[file], title:'프로게이머 키우기', text:S.shareText+'\nhttps://bsh0401.github.io/Web_Game/'}); }catch(e){}
+    try{ await navigator.share({files:[file], title:'프로게이머 키우기', text:S.shareText}); }catch(e){}
   }
 }
 function copyResult(){
@@ -2159,6 +2159,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {b:12, d:'2026-11-26', items:['🔗 결과 복사·공유에 게임 링크가 함께 들어가요','🔧 게임 개선을 위한 익명 유입 경로 통계']},
   {b:11, d:'2026-11-24', items:['📆 오늘 랭킹, 🗓️ 이번 주 랭킹 추가 (매주 월요일 새로 시작)','🏆 랭킹 창을 탭으로 한눈에: 오늘 · 이번 주 · 전체 · 오늘의 시드 · 내 기록']},
   {b:10, d:'2026-11-24', items:['🔊 효과음 추가: 승리·패배·우승 팡파르·업적·이벤트·히든 이벤트 등','🔇 오른쪽 위 버튼으로 효과음을 끄고 켤 수 있어요']},
   {b:9, d:'2026-11-24', items:['🖱️ 팝업 바깥을 누르거나 Esc를 누르면 닫혀요 (꼭 골라야 하는 선택 창은 제외)']},
@@ -2187,12 +2188,31 @@ async function bumpStats(fields){
   try{ await fetch(`https://firestore.googleapis.com/v1/projects/${RANK.projectId}/databases/(default)/documents:commit?key=${RANK.apiKey}`,
     {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); }catch(e){}
 }
+// 유입 경로: 어느 경로로 왔는지 분류 결과만 센다 (주소·개인정보는 저장하지 않음)
+const SRC_LABELS = {srcGoogle:'🔍 구글', srcNaver:'🟢 네이버', srcKakao:'💬 카카오톡', srcSns:'📱 SNS·커뮤니티', srcShare:'🔗 결과 공유', srcDirect:'⌨️ 직접 접속', srcOther:'🌐 기타 사이트'};
+function visitSource(){
+  const q = new URLSearchParams(location.search);
+  if(q.get('from') === 'share') return 'srcShare';
+  const ref = (q.has('ref') ? q.get('ref') : document.referrer || '').toLowerCase();   // 짧은 주소에서 넘어오면 ref로 원래 출처가 전달된다
+  const ua = navigator.userAgent;
+  if(/KAKAOTALK/i.test(ua) || /kakao/.test(ref)) return 'srcKakao';
+  if(/(^|\.|\/\/)google\./.test(ref)) return 'srcGoogle';
+  if(/naver\.(com|me)/.test(ref)) return 'srcNaver';
+  if(/Instagram|FBAN|FBAV|FB_IAB|Line\/|Twitter|Discord/i.test(ua)
+     || /instagram|facebook|fb\.com|t\.co\/|twitter|x\.com|threads\.net|discord|youtube|youtu\.be|reddit|dcinside|fmkorea|arca\.live|ruliweb|inven|theqoo|clien|tiktok/.test(ref)) return 'srcSns';
+  if(!ref || /bsh0401\.github\.io/.test(ref)) return 'srcDirect';
+  return 'srcOther';
+}
 function trackVisit(){
+  const src = visitSource();
+  // 주소창의 ?ref= / ?from= 은 지워서, 그대로 복사해 퍼져도 경로가 섞이지 않게 한다
+  if(location.search){ try{ history.replaceState(null, '', location.pathname + location.hash); }catch(e){} }
   const day = today();
   if(storeGet('pg_visit') === day) return;              // 하루에 브라우저당 한 번만
   const isNew = !(storeGet('pg_visit') || storeGet('pg_ver') || storeGet('pg_records') || storeGet('pg_save') || storeGet('pg_tut'));
   storeSet('pg_visit', day);
   bumpStats(isNew ? ['visits','newUsers'] : ['visits']);
+  bumpStats([src]);   // 경로는 따로 보낸다 (규칙 게시 전이어도 방문자 수는 계속 세지도록)
 }
 
 /* ================= 새 버전 감지: 게임 중에는 기다렸다가, 끝나면 알려준다 ================= */
