@@ -223,6 +223,11 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 .react{height:170px;border-radius:12px;display:grid;place-items:center;font-size:30px;font-weight:900;background:#1a2133;border:1px solid var(--line);cursor:pointer}
 .react.go{background:#5a1b25;border-color:var(--bad);color:#fff;font-size:64px}
 .apmn{font-size:56px;font-weight:900;text-align:center;margin:6px 0}
+.wkcard{background:var(--panel2);border:1px solid #3a3466;border-radius:12px;padding:9px 11px;margin:12px 0;font-size:13px}
+.wkcard .t{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.wk{display:flex;gap:8px;align-items:baseline;padding:2px 0}
+.wk.ok{color:var(--muted);text-decoration:line-through}
+.wkd{font-size:11px;font-weight:700;min-width:38px}
 .rtabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .rtab{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted)}
 .rtab.on{border-color:var(--accent);background:#1b2440;color:#cfe0ff;font-weight:700}
@@ -791,6 +796,7 @@ function getActions(){
 }
 function turnDelta(a,b){ const d={}; for(const k in a) d[k]=b[k]-a[k]; return d; }
 const SPECIAL_MAX = 5;
+const spMax = () => (S && S.specialMax) || SPECIAL_MAX;
 const SPECIALS = [
   {icon:'🌏', label:'해외 부트캠프', desc:'숙련도 +12 · 운영 +5 · 피로 +25 · 300만원', ok:()=>S.money>=300&&S.injury<=0,
    run:()=>{ fx({skill:12,macro:5,fatigue:25,money:-300}); return '해외 명문팀 연습실에서 지옥의 부트캠프를 버텨냈다!'; }},
@@ -807,11 +813,11 @@ const SPECIALS = [
 async function doSpecial(){
   if(busy || S.ended || S.special<=0) return;
   busy=true; render();
-  const i = await modal({title:`⭐ 특수훈련 (남은 횟수 ${S.special}/${SPECIAL_MAX})`,
+  const i = await modal({title:`⭐ 특수훈련 (남은 횟수 ${S.special}/${spMax()})`,
     html:'<p>인생에 단 5번! 이번 분기를 특수훈련에 쏟는다.</p><p class="muted">한 번 쓰면 되돌릴 수 없어요. 결정적인 순간을 위해 아껴두는 것도 전략이에요.</p>',
     choices:[...SPECIALS.map(sp=>({label:`${sp.icon} ${sp.label}`, desc:sp.desc, disabled:!sp.ok()})), {label:'취소'}]});
   if(i>=SPECIALS.length){ busy=false; render(); return; }
-  const sp=SPECIALS[i]; S.special--;
+  const sp=SPECIALS[i]; S.special--; S.specialUsed=(S.specialUsed||0)+1;
   const b=snap(); const msg=sp.run(); const chips=diffHtml(b,snap());
   hist(`특수훈련: ${sp.label}`,'good');
   log(`⭐ ${msg}`, chips, 'key');
@@ -1112,7 +1118,7 @@ async function featured(opp, stage, bo, weight=1, nat=null){
       <p class="muted">예상 승률 <b style="color:var(--text)">${pct}%</b> · ${bo}판 ${need}선승제 · 상대 전력 ${opp.rating}</p>
       ${g==='br'?'<p class="muted">라운드마다 상대 팀보다 높은 순위를 차지하면 승리</p>':''}<p>감독: "오늘 작전은 네가 정해라."</p>`, choices:G.tactics.map(t=>({label:t.label,desc:t.desc})), kind:'match'});
     mod=G.tactics[i].mod(); tName=G.tactics[i].label;
-    if(miniOn()){ perf = await playMini(g); mod += (perf-.5)*.2; }
+    if(miniOn()){ perf = await playMini(g); mod += (perf-.5)*.2; if(perf>=.9) S.mini90=(S.mini90||0)+1; }
   }
   const p=clamp(.5 + (base+mod-.5)*G.variance, .05, .95);
   let w=0,l=0,n=1; const lines=[];
@@ -1820,7 +1826,7 @@ const ACHS = [
   {id:'dirt', cat:'challenge', ic:'🧱', name:'개천에서 용', desc:'흙수저로 월드 챔피언', test:()=>S.family.name==='흙수저'&&S.trophies.worlds.length>=1},
   {id:'spoon', cat:'challenge', ic:'🥄', name:'금수저의 눈물', desc:'금수저로 태어나 프로 데뷔 실패', end:true, test:()=>S.family.name==='금수저'&&!S.was2&&!S.wasPro},
   {id:'dgrade', cat:'challenge', ic:'🐢', name:'노력은 배신하지 않는다', desc:'D등급 재능을 안고 리그 우승', test:()=>['phys','macro','mental'].some(k=>grade(S.talent[k])==='D')&&S.trophies.league.length>=1},
-  {id:'nospecial', cat:'challenge', ic:'🙅', name:'맨손의 챔피언', desc:'특수훈련을 쓰지 않고 리그 우승', test:()=>S.special===5&&S.trophies.league.length>=1},
+  {id:'nospecial', cat:'challenge', ic:'🙅', name:'맨손의 챔피언', desc:'특수훈련을 쓰지 않고 리그 우승', test:()=>!(S.specialUsed>0)&&S.trophies.league.length>=1},
   {id:'dual', cat:'challenge', ic:'⚔️', name:'장르 파괴자', desc:'두 장르에서 우승', test:()=>S.champGenres.length>=2},
   {id:'switcher', cat:'challenge', ic:'🔄', name:'새로운 도전', desc:'장르 전향하기', test:()=>!!S.switched},
   {id:'abroad', cat:'challenge', ic:'✈️', name:'해외파', desc:'해외 팀으로 이적하기', test:()=>!!S.flags.wentAbroad},
@@ -1829,6 +1835,7 @@ const ACHS = [
   {id:'allcountry', cat:'collect', ic:'🌏', name:'세계 일주', desc:'6개 나라 모두로 1군 데뷔', meta:true, test:c=>Object.keys(c.countries).length>=6},
   {id:'allgenre', cat:'collect', ic:'🎮', name:'올라운더', desc:'5개 장르 모두로 1군 데뷔', meta:true, test:c=>Object.keys(c.genres).length>=5},
   {id:'endings6', cat:'collect', ic:'🎬', name:'다양한 인생', desc:'서로 다른 엔딩 6종 보기', meta:true, test:c=>Object.keys(c.endings).length>=6},
+  {id:'weeklyAll', cat:'collect', ic:'📋', name:'주간 올클리어', desc:'한 주의 도전과제 3개를 모두 깨기', meta:true, test:c=>Object.keys(c.weekly||{}).length>=1},
   {id:'hiddenEv', cat:'collect', ic:'✨', name:'숨겨진 이야기', desc:'히든 이벤트 보기', meta:true, test:c=>HIDDEN.some(e=>c.events[e.id])},
   {id:'hiddenEnd', cat:'collect', ic:'🗝️', name:'비밀의 문', desc:'히든 엔딩 보기', meta:true, test:c=>HIDDEN_ENDINGS.some(e=>c.endings[e])},
   {id:'events40', cat:'collect', ic:'📖', name:'이야기 수집가', desc:'서로 다른 이벤트 40종 보기', meta:true, test:c=>EVENTS.filter(e=>c.events[e.id]).length>=40},
@@ -1844,7 +1851,7 @@ const ENDING_IC = ['🏅','🎓','🎙️','🎤','📺','📺','📺','🏢','�
 const TITLES = ['불멸의 황제','장르 파괴자','월드 챔피언','국가대표 영웅','리그의 지배자','리그 챔피언','금메달리스트','꾸준한 베테랑','1군 프로게이머','만년 2군','랭크의 신 (프로 데뷔 실패)','꿈꾸던 게이머'];
 function getCol(){
   const c = storeGet('pg_col') || {};
-  for(const k of ['ach','endings','titles','events','countries','genres']) c[k] = c[k] || {};
+  for(const k of ['ach','endings','titles','events','countries','genres','weekly']) c[k] = c[k] || {};
   return c;
 }
 function today(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -1927,6 +1934,78 @@ async function showCollection(tab='ach'){
   busy=wasBusy; if(S && !S.ended) render();
 }
 
+/* ================= 주간 도전과제 ================= */
+// 매주 월요일, 모두에게 같은 과제 3개(쉬움·보통·어려움). 은퇴할 때 판정하고, 깨면 다음 인생 특수훈련 +1 티켓.
+const lw = () => S.trophies.league.length, ww = () => S.trophies.worlds.length;
+const genreWon = g => S.champGenres.includes(g);
+const WEEKLY_POOL = {
+  easy: [
+    {id:'e_pro', t:'1군 데뷔하기', test:()=>S.wasPro},
+    {id:'e_seed', t:'오늘의 시드 끝까지 플레이하기', test:()=>!!S.daily},
+    {id:'e_league', t:'리그 우승 1회', test:()=>lw()>=1},
+    {id:'e_event', t:'한 인생에서 이벤트 15종 겪기', test:()=>Object.keys(S.seen||{}).length>=15},
+    {id:'e_mini', t:'미니게임에서 90점 이상 받기', test:()=>(S.mini90||0)>=1},
+    {id:'e_rival', t:'라이벌과 공식전 5번 만나기', test:()=>!!S.rv&&S.rv.h2h.w+S.rv.h2h.l>=5},
+  ],
+  normal: [
+    {id:'n_dirt', t:'흙수저로 1군 데뷔하기', test:()=>S.family.name==='흙수저'&&S.wasPro},
+    {id:'n_fps', t:'FPS로 우승하기', test:()=>genreWon('fps')},
+    {id:'n_fight', t:'격투로 우승하기', test:()=>genreWon('fight')},
+    {id:'n_br', t:'배틀로얄로 우승하기', test:()=>genreWon('br')},
+    {id:'n_rts', t:'RTS로 우승하기', test:()=>genreWon('rts')},
+    {id:'n_medal', t:'아시안게임 메달 따기', test:()=>(S.medals||[]).length>=1},
+    {id:'n_prodigy', t:'17세 이하에 1군 데뷔하기', test:()=>S.first1Age!=null&&S.first1Age<=17},
+    {id:'n_score', t:'인생 점수 6,000점 이상', test:()=>computeScore()>=6000},
+    {id:'n_brazil', t:'브라질 국적으로 리그 우승하기', test:()=>S.country==='BR'&&lw()>=1},
+    {id:'n_caster', t:'은퇴 후 해설위원 되기', test:()=>S.career==='caster'},
+  ],
+  hard: [
+    {id:'h_worlds', t:'월드 챔피언 되기', test:()=>ww()>=1},
+    {id:'h_nations', t:'네이션스컵 우승하기', test:()=>(S.trophies.nations||[]).length>=1},
+    {id:'h_exempt', t:'한국 국적으로 병역 특례 받기', test:()=>S.country==='KR'&&!!S.flags.gold},
+    {id:'h_nospecial', t:'특수훈련 없이 리그 우승하기', test:()=>!(S.specialUsed>0)&&lw()>=1},
+    {id:'h_rival', t:'라이벌보다 많이 우승하고 은퇴하기', test:()=>!!S.flags.rivalMet&&myWins()>rvWins()},
+    {id:'h_score', t:'인생 점수 12,000점 이상', test:()=>computeScore()>=12000},
+    {id:'h_hidden', t:'히든 이벤트 겪기', test:()=>HIDDEN.some(h=>S.seen&&S.seen[h.id])},
+    {id:'h_dual', t:'두 장르에서 우승하기', test:()=>S.champGenres.length>=2},
+  ],
+};
+const DIFF = {easy:['쉬움','#3ecf8e'], normal:['보통','#ffb547'], hard:['어려움','#ff5d6c']};
+function weekStart(){ return weekDates()[0]; }
+function weeklyList(){
+  const ws = weekStart();
+  let st = hashStr('progamer-weekly-' + ws);   // 게임 운과 분리된 주간 전용 랜덤
+  const r = () => { const [v,n]=mulberry(st); st=n; return v; };
+  return ['easy','normal','hard'].map(d => ({...WEEKLY_POOL[d][Math.floor(r()*WEEKLY_POOL[d].length)], diff:d}));
+}
+function weeklyState(){
+  const ws = weekStart(), w = storeGet('pg_weekly');
+  return w && w.week===ws ? w : {week:ws, done:{}};
+}
+function weeklyDaysLeft(){ return 7 - weekDates().length + 1; }
+/** 은퇴할 때 판정. 이번 인생에서 새로 깬 과제 목록을 돌려준다 */
+function checkWeekly(){
+  const w = weeklyState(), list = weeklyList(), got = [];
+  for(const c of list){
+    if(w.done[c.id]) continue;
+    let ok=false; try{ ok=!!c.test(); }catch(e){}
+    if(ok){ w.done[c.id]=today(); got.push(c); }
+  }
+  if(got.length){
+    storeSet('pg_bonus', (storeGet('pg_bonus')||0) + got.length);
+    if(list.every(c=>w.done[c.id])){ const col=getCol(); col.weekly[w.week]=1; storeSet('pg_col', col); }
+  }
+  storeSet('pg_weekly', w);
+  return got;
+}
+function weeklyCard(compact=false){
+  const w = weeklyState(), list = weeklyList(), n = list.filter(c=>w.done[c.id]).length, bonus = storeGet('pg_bonus')||0;
+  const rows = list.map(c=>`<div class="wk ${w.done[c.id]?'ok':''}"><span class="wkd" style="color:${DIFF[c.diff][1]}">${DIFF[c.diff][0]}</span><span>${w.done[c.id]?'✅':'⬜'} ${c.t}</span></div>`).join('');
+  if(compact) return `<div class="wkcard"><div class="t"><b>📋 이번 주 도전과제</b><span class="muted">${n}/3</span></div>${rows}</div>`;
+  return `<div class="wkcard"><div class="t"><b>📋 이번 주 도전과제 ${n}/3</b><span class="muted">${weeklyDaysLeft()}일 남음 · 월요일에 새 과제</span></div>${rows}
+    <div class="muted" style="font-size:12px;margin-top:4px">은퇴할 때 판정돼요. 과제를 깨면 🎟️ 다음 인생 특수훈련 +1 (자유 플레이)${bonus?` · 지금 티켓 <b style="color:var(--gold)">${bonus}장</b>`:''}</div></div>`;
+}
+
 function computeTitle(){
   const W=S.trophies.worlds.length, L=S.trophies.league.length;
   if(W>=3) return '불멸의 황제';
@@ -1973,6 +2052,7 @@ function showEnding(){
     worlds:S.trophies.worlds.length, leagues:S.trophies.league.length, age:S.age, date: S.daily || date, v: S.daily ? 2 : 1};
   if(S.daily && S.daily===today()){ const dr=dailyRec(); if(score>dr.best){ dr.best=score; storeSet('pg_daily', dr); } }
   saveLocalRecord(S.rankRec);
+  const weeklyGot = checkWeekly();
   checkAch(true);
   if(!S.statDone){ S.statDone=true; bumpStats(S.daily ? ['finishes','dailyPlays'] : ['finishes']); }
   setTimeout(checkNewVersion, 2500);
@@ -1999,6 +2079,8 @@ function showEnding(){
     </div>
     <h3 style="margin:10px 0 4px">🏆 우승 기록</h3>${trophies}
     ${rivalEndHtml()}
+    <h3 style="margin:14px 0 6px">📋 주간 도전과제</h3>
+    ${weeklyGot.length?`<div class="pog" style="text-align:left;margin-bottom:6px">🎉 이번 인생에서 ${weeklyGot.length}개 달성! 🎟️ 다음 인생 특수훈련 +${weeklyGot.length}</div>`:''}${weeklyCard()}
     <h3 style="margin:14px 0 6px">🏅 이번 인생에서 얻은 업적 (${newAch.length})</h3>
     ${newAch.length ? `<div class="achgrid">${newAch.map(a=>`<div class="achc new"><span class="ai">${a.ic}</span><div><b>${a.name}</b><small>${a.desc}</small></div></div>`).join('')}</div>` : '<div class="muted">이번엔 새 업적이 없어요. 도감에서 남은 목표를 확인해 보세요!</div>'}
     <button class="linkbtn" style="margin-top:6px" onclick="showCollection()">📚 도감 보기 (수집률 ${colStats().pct}%)</button>
@@ -2013,6 +2095,7 @@ function showEnding(){
     <button class="primary" style="width:100%;margin-top:10px;background:linear-gradient(90deg,var(--gold),#ff9f6b);color:#241500" onclick="showShareImage()">🖼️ 결과 이미지 만들기 (저장·공유)</button>
   </div>`;
   S.endInfo = {title, sub, score};
+  if(weeklyGot.length){ SFX.play('ach'); }
   S.shareText = `🎮 프로게이머 키우기${S.daily?` · 📅 오늘의 시드 ${S.daily}`:''}\n${CT().flag} ${S.name} (14~${S.age}세)\n칭호: ${title} / 은퇴 후: ${sub}\n월드 우승 ${S.trophies.worlds.length}회 · 리그 우승 ${S.trophies.league.length}회 · 최고 ${tierOf(S.peakMmr)}\n인생 점수 ${score.toLocaleString()}점\n👉 https://bsh0401.github.io/Web_Game/?from=share`;
   storeSet('pg_save', null);
   $('#game').classList.add('hide'); $('#ending').classList.remove('hide'); $('#status').innerHTML='';
@@ -2311,6 +2394,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {b:14, d:'2026-11-26', items:['📋 주간 도전과제: 매주 월요일 새 과제 3개 (쉬움·보통·어려움)','🎟️ 과제를 깨면 다음 인생 특수훈련 +1 티켓','🏅 업적 「주간 올클리어」 추가']},
   {b:13, d:'2026-11-26', items:['🕹️ 경기 미니게임: 중요한 경기마다 장르별 3초 조작 (한타 타이밍·에임·APM·콤보·반응 속도)','🎯 미니게임 점수가 승률에 최대 ±10% 반영','⏭ 건너뛰기, 위쪽 🕹️ 버튼으로 끄고 켜기']},
   {b:12, d:'2026-11-26', items:['🔗 결과 복사·공유에 게임 링크가 함께 들어가요','🔧 게임 개선을 위한 익명 유입 경로 통계']},
   {b:11, d:'2026-11-24', items:['📆 오늘 랭킹, 🗓️ 이번 주 랭킹 추가 (매주 월요일 새로 시작)','🏆 랭킹 창을 탭으로 한눈에: 오늘 · 이번 주 · 전체 · 오늘의 시드 · 내 기록']},
@@ -2450,6 +2534,7 @@ function showStart(){
         <br><span class="muted">S 매우 빠름 · A 빠름 · B 보통 · C 느림 · D 매우 느림</span></div>
       <div>💡 같은 20이라도 A 등급이 C 등급보다 훨씬 빨리 성장해요. 길게 보면 <b>시작 수치보다 등급이 더 중요해요!</b></div>
     </div>
+    ${weeklyCard()}
     <label class="muted" style="font-size:13px">닉네임</label>
     <input type="text" id="nick" maxlength="12" placeholder="예: 페이크" value="">
     <div class="btnrow">
@@ -2469,7 +2554,11 @@ function startGame(){
     _rngState=P.state; S=newLife(P.roll, name); S.country=P.country; S.daily=P.date;
     S.rngState=_rngState; _rngState=null;   // 이제부터 이 인생의 모든 운은 오늘의 시드를 따른다
     const d=dailyRec(); d.tries++; storeSet('pg_daily', d);
-  } else S = newLife(roll, name);
+  } else {
+    S = newLife(roll, name);
+    const bonus = storeGet('pg_bonus')||0;
+    if(bonus>0){ S.special += 1; S.specialMax = SPECIAL_MAX + 1; storeSet('pg_bonus', bonus-1); setTimeout(()=>showToast('🎟️ 보너스 티켓 사용! 이번 인생 특수훈련 +1 (6회)'), 600); }
+  }
   attachMeta();
   hist(`${CT().flag} ${CT().name} ${S.family.name}에서 태어난 게이머 ${name}, 꿈을 꾸기 시작하다`,'key');
   log(`${S.daily?`📅 오늘의 시드(${S.daily}) · `:''}🍼 ${S.family.emoji} ${S.family.name} 출신 ${esc(name)}의 게이머 인생이 시작됐다!`,'','key');
@@ -2564,7 +2653,7 @@ function render(){
     <div class="bars">${bar('🖐️ 피지컬',S.phys,'phys')}${bar('🧠 운영',S.macro,'macro')}${bar('💎 멘탈',S.mental,'mental')}${bar('💪 체력',S.health,'health')}${bar('⭐ 인기',S.pop,'pop')}${bar('📚 학업',S.edu,'edu')}${bar('😵 피로',S.fatigue,'fatigue')}</div>
     <div class="genres">${S.genre
       ? genreBox(S.genre) + `<details class="others"><summary>다른 장르 ${others.length}개 보기</summary>${others.map(genreBox).join('')}</details>`
-      : GKEYS.map(genreBox).join('')}</div>${rivalCard()}`;
+      : GKEYS.map(genreBox).join('')}</div>${rivalCard()}${weeklyCard(true)}`;
   // 목표
   const G0 = goalInfo();
   let warn = S.injury>0 ? '🩹 부상 중이라 랭크와 팀 연습을 할 수 없어요.' : S.fatigue>70 ? '⚠️ 피로가 높아요. 계속 무리하면 슬럼프나 부상이 올 수 있어요.' : '';
@@ -2585,7 +2674,7 @@ function render(){
   }
   html += `<button class="act sp" id="spBtn" ${busy||S.special<=0?'disabled':''}><span class="i">⭐</span>
     <div class="grow"><b>특수훈련</b><small>인생에 5번! 크게 성장하는 특별 프로그램</small></div>
-    <span class="pips">${'●'.repeat(S.special)}${'○'.repeat(SPECIAL_MAX-S.special)}</span></button>`;
+    <span class="pips">${'●'.repeat(S.special)}${'○'.repeat(Math.max(0,spMax()-S.special))}</span></button>`;
   $('#actions').innerHTML = html;
   $('#actions').querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>doAction(acts[+b.dataset.act]));
   $('#spBtn').onclick = doSpecial;
