@@ -199,8 +199,8 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 @keyframes slidein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .modal[data-kind=match]{border-color:var(--accent)}
 .modal[data-kind=event]{border-color:#4a3a73}
-.mini{position:fixed;inset:0;z-index:65;background:rgba(5,7,12,.78);display:flex;align-items:center;justify-content:center;padding:16px}
-.mini.hide{display:none}
+#mini{position:fixed;inset:0;z-index:65;background:rgba(5,7,12,.78);display:flex;align-items:center;justify-content:center;padding:16px}
+#mini.hide{display:none}
 .mini-box{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--accent);border-radius:16px;padding:16px;box-shadow:0 0 40px rgba(79,140,255,.25);animation:pop .18s ease-out}
 .mini-head{display:flex;justify-content:space-between;align-items:center;font-size:17px}
 .mini-hint{font-size:13px;color:var(--muted);margin:6px 0 12px;min-height:18px}
@@ -401,7 +401,7 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border
 
 <div id="toast"></div>
 <div id="recap" class="recap hide" role="dialog" aria-label="커리어 회고"></div>
-<div id="mini" class="mini hide" role="dialog" aria-label="경기 미니게임"><div class="mini-box">
+<div id="mini" class="hide" role="dialog" aria-label="경기 미니게임"><div class="mini-box">
   <div class="mini-head"><b id="miniTitle"></b><button class="linkbtn" id="miniSkip">건너뛰기 ⏭</button></div>
   <div id="miniHint" class="mini-hint"></div><div id="miniArea" class="mini-area"></div>
   <div class="mini-foot"><button class="linkbtn" id="miniOff">다음부터 자동 진행</button></div>
@@ -2460,6 +2460,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {b:16, d:'2026-11-26', items:["🔧 게임을 시작하면 화면이 어둡게 가려지던 문제 수정"]},
   {b:15, d:'2026-11-26', items:['👨‍👦 2세대 레거시: 은퇴 후 내 아이로 다음 인생을 이어가요 (재능·재산·장르 감각 상속)','🔥 라이벌도 2세로 돌아온다, 가문 전용 이벤트 3종','🌳 가문 연표와 가문 총점, 업적 3종 추가']},
   {b:14, d:'2026-11-26', items:['📋 주간 도전과제: 매주 월요일 새 과제 3개 (쉬움·보통·어려움)','🎟️ 과제를 깨면 다음 인생 특수훈련 +1 티켓','🏅 업적 「주간 올클리어」 추가']},
   {b:13, d:'2026-11-26', items:['🕹️ 경기 미니게임: 중요한 경기마다 장르별 3초 조작 (한타 타이밍·에임·APM·콤보·반응 속도)','🎯 미니게임 점수가 승률에 최대 ±10% 반영','⏭ 건너뛰기, 위쪽 🕹️ 버튼으로 끄고 켜기']},
