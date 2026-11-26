@@ -199,6 +199,30 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 @keyframes slidein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .modal[data-kind=match]{border-color:var(--accent)}
 .modal[data-kind=event]{border-color:#4a3a73}
+.mini{position:fixed;inset:0;z-index:65;background:rgba(5,7,12,.78);display:flex;align-items:center;justify-content:center;padding:16px}
+.mini.hide{display:none}
+.mini-box{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--accent);border-radius:16px;padding:16px;box-shadow:0 0 40px rgba(79,140,255,.25);animation:pop .18s ease-out}
+.mini-head{display:flex;justify-content:space-between;align-items:center;font-size:17px}
+.mini-hint{font-size:13px;color:var(--muted);margin:6px 0 12px;min-height:18px}
+.mini-area{position:relative;min-height:150px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.mini-foot{text-align:right;margin-top:8px}
+.mini-count{position:absolute;inset:0;display:grid;place-items:center;font-size:44px;font-weight:900;color:var(--gold)}
+.tbar{position:relative;height:34px;background:#0b0e15;border:1px solid var(--line);border-radius:10px;margin:24px 0 16px;overflow:hidden}
+.tzone{position:absolute;top:0;bottom:0;background:rgba(62,207,142,.35);border-left:2px solid var(--good);border-right:2px solid var(--good)}
+.tmark{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;background:#fff;border-radius:3px;box-shadow:0 0 10px #fff}
+.minibtn{width:100%;font-size:18px;padding:14px}
+.aimfield{position:relative;height:200px;background:radial-gradient(circle at 50% 50%,#1b2236,#0b0e15);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:crosshair}
+.target{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:radial-gradient(circle,#fff 0 18%,#ff5d6c 19% 42%,#fff 43% 58%,#ff5d6c 59%);box-shadow:0 0 12px rgba(255,93,108,.7);animation:pop .12s ease-out}
+.minifx{font-size:15px;text-align:center;margin-top:8px;font-weight:700}
+.combo{display:flex;justify-content:center;gap:10px;margin:14px 0}
+.combo span{width:52px;height:52px;display:grid;place-items:center;font-size:26px;border-radius:12px;background:var(--panel2);border:2px solid var(--line)}
+.combo span.ok{border-color:var(--good);background:#143326}
+.combo span.bad{border-color:var(--bad);background:#3a1820}
+.arrows{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.arrows button{font-size:24px;padding:12px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+.react{height:170px;border-radius:12px;display:grid;place-items:center;font-size:30px;font-weight:900;background:#1a2133;border:1px solid var(--line);cursor:pointer}
+.react.go{background:#5a1b25;border-color:var(--bad);color:#fff;font-size:64px}
+.apmn{font-size:56px;font-weight:900;text-align:center;margin:6px 0}
 .rtabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .rtab{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted)}
 .rtab.on{border-color:var(--accent);background:#1b2440;color:#cfe0ff;font-weight:700}
@@ -331,7 +355,7 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border
 <div class="wrap">
   <header class="top">
     <h1 class="logo" style="margin:0">🎮 <span>프로게이머 키우기</span></h1>
-    <div class="hdr-btns"><div class="status" id="status"></div><button class="sbtn" id="sndBtn" onclick="toggleSound()" title="효과음 끄기">🔊</button><button class="sbtn" onclick="showCollection()">📚 도감</button><button class="sbtn" onclick="showTutorial()">❓ 도움말</button><button class="sbtn" onclick="showFeedback()">💬 건의·버그</button><button class="sbtn" onclick="showRanking()">🏆 랭킹</button></div>
+    <div class="hdr-btns"><div class="status" id="status"></div><button class="sbtn" id="sndBtn" onclick="toggleSound()" title="효과음 끄기">🔊</button><button class="sbtn" id="miniBtn" onclick="toggleMini()" title="경기 미니게임 끄기">🕹️</button><button class="sbtn" onclick="showCollection()">📚 도감</button><button class="sbtn" onclick="showTutorial()">❓ 도움말</button><button class="sbtn" onclick="showFeedback()">💬 건의·버그</button><button class="sbtn" onclick="showRanking()">🏆 랭킹</button></div>
   </header>
 
   <!-- 시작 화면 -->
@@ -370,6 +394,11 @@ textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border
 
 <div id="toast"></div>
 <div id="recap" class="recap hide" role="dialog" aria-label="커리어 회고"></div>
+<div id="mini" class="mini hide" role="dialog" aria-label="경기 미니게임"><div class="mini-box">
+  <div class="mini-head"><b id="miniTitle"></b><button class="linkbtn" id="miniSkip">건너뛰기 ⏭</button></div>
+  <div id="miniHint" class="mini-hint"></div><div id="miniArea" class="mini-area"></div>
+  <div class="mini-foot"><button class="linkbtn" id="miniOff">다음부터 자동 진행</button></div>
+</div></div>
 <div class="ov" id="modal"><div class="modal">
   <h2 id="mTitle"></h2><div id="mBody"></div><div class="choices" id="mChoices"></div>
 </div></div>
@@ -946,11 +975,133 @@ function setLine(g,n,win){
   return `<li class="${win?'w':'l'}">${n}맵 ${pick(G.maps)} <b>${win?hi:lo} : ${win?lo:hi}</b> — ${pick(win?G.win:G.lose)}</li>`;
 }
 function winProbR(teamR, opp){ const w=GENRES[S.genre].solo; const str=w*teamR+(1-w)*eff(pw()); return 1/(1+Math.exp(-(str-opp.rating)/8)); }
+/* ================= 경기 미니게임 =================
+   결과(0~1)는 승률에 최대 ±10%만 반영한다. 미니게임 화면 연출에는 게임 운(rng)을 쓰지 않아 오늘의 시드 결과가 흔들리지 않는다. */
+const vrand = () => Math.random();   // 연출 전용 랜덤 (게임 결과용 rng()와 분리)
+const miniOn = () => storeGet('pg_mini') !== 0;
+function toggleMini(){
+  const on = !miniOn(); storeSet('pg_mini', on ? 1 : 0);
+  const b=$('#miniBtn'); if(b){ b.style.opacity = on ? 1 : .45; b.title = on ? '경기 미니게임 끄기' : '경기 미니게임 켜기'; }
+  showToast(on ? '🕹️ 경기 미니게임을 켰어요' : '🕹️ 경기 미니게임을 껐어요 (자동 진행)');
+}
+let miniKey = null, miniTimers = [];
+document.addEventListener('keydown', e=>{ if(miniKey && !$('#mini').classList.contains('hide')){ if([' ','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) e.preventDefault(); miniKey(e.key); } });
+const mtimer = (fn, ms) => { const t=setTimeout(fn, ms); miniTimers.push(t); return t; };
+function miniRun(title, hint, game){
+  return new Promise(done=>{
+    const ov=$('#mini'), area=$('#miniArea');
+    let finished=false;
+    const finish = perf => {
+      if(finished) return; finished=true;
+      miniKey=null; miniTimers.forEach(clearTimeout); miniTimers=[];
+      perf = clamp(perf, 0, 1);
+      const pt=Math.round(perf*100);
+      area.insertAdjacentHTML('beforeend', `<div class="minifx" style="color:${perf>=.7?'var(--good)':perf>=.4?'var(--warn)':'var(--bad)'}">${pt>=90?'완벽! ':pt>=70?'좋아요! ':pt>=40?'무난해요 ':'아쉬워요… '}${pt}점</div>`);
+      SFX.play(perf>=.7 ? 'chime' : perf>=.4 ? 'click' : 'bad');
+      setTimeout(()=>{ ov.classList.add('hide'); done(perf); }, 900);
+    };
+    $('#miniTitle').textContent=title; $('#miniHint').textContent=hint; area.innerHTML='';
+    $('#miniSkip').onclick = () => { if(!finished){ finished=true; miniKey=null; miniTimers.forEach(clearTimeout); miniTimers=[]; ov.classList.add('hide'); done(.5); } };
+    $('#miniOff').onclick = () => { storeSet('pg_mini',0); const b=$('#miniBtn'); if(b) b.style.opacity=.45; $('#miniSkip').onclick(); showToast('🕹️ 다음부터는 미니게임 없이 자동으로 진행해요. 위쪽 🕹️ 버튼으로 다시 켤 수 있어요.'); };
+    ov.classList.remove('hide');
+    // 준비 카운트다운
+    area.innerHTML='<div class="mini-count">준비</div>';
+    mtimer(()=>{ area.innerHTML='<div class="mini-count">시작!</div>'; SFX.play('click'); }, 700);
+    mtimer(()=>{ area.innerHTML=''; game(area, finish); }, 1100);
+  });
+}
+// ⚔️ MOBA: 움직이는 표시를 초록 구간에서 멈추기
+function gameTiming(area, finish){
+  const zone = 16 + S.macro*.14;   // 운영이 높을수록 구간이 넓다(%)
+  area.innerHTML = `<div class="tbar"><div class="tzone" style="left:${50-zone/2}%;width:${zone}%"></div><div class="tmark" id="tmark"></div></div><button class="primary minibtn" id="miniGo">지금 진입!</button>`;
+  // 일정한 속도로 왕복(삼각파): 구간 안에 머무는 시간이 0.2~0.3초쯤 되도록
+  const t0=performance.now(), speed=1+vrand()*.25, phase=vrand()*2; let raf=0, done=false;
+  const pos = () => { const f=((performance.now()-t0)/1000*speed + phase) % 2; return 2 + 96*(f<1 ? f : 2-f); };
+  const loop = () => { if(done) return; const m=$('#tmark'); if(m) m.style.left=pos()+'%'; raf=requestAnimationFrame(loop); };
+  loop();
+  const stop = () => { if(done) return; done=true; cancelAnimationFrame(raf); const d=Math.abs(pos()-50);
+    finish(d<=zone/2 ? 1 - .3*(d/(zone/2)) : Math.max(0, .55 - (d-zone/2)/40)); };
+  $('#miniGo').onclick = stop; miniKey = k => { if(k===' ') stop(); };
+  mtimer(()=>{ if(!done){ done=true; cancelAnimationFrame(raf); finish(.1); } }, 5000);
+}
+// 🎯 FPS: 과녁 5개 맞히기
+function gameAim(area, finish){
+  area.innerHTML = '<div class="aimfield" id="aimf"></div><div class="mini-hint" id="aimc" style="text-align:center;margin:8px 0 0">0 / 5</div>';
+  const life = 650 + S.phys*5;   // 피지컬이 높을수록 과녁이 오래 떠 있다(ms)
+  let n=0, hits=0, speedSum=0;
+  const next = () => {
+    if(n>=5){ finish(hits/5*.85 + (hits?Math.min(.15, .15*(life/(speedSum/hits+1))/3):0)); return; }
+    n++; const f=$('#aimf'); if(!f) return; f.innerHTML='';
+    const t=document.createElement('div'); t.className='target';
+    t.style.left = (12+vrand()*76)+'%'; t.style.top = (16+vrand()*68)+'%';
+    const born=performance.now(); let gone=false;
+    t.onpointerdown = e => { e.stopPropagation(); if(gone) return; gone=true; hits++; speedSum+=performance.now()-born; SFX.play('click'); t.remove(); $('#aimc').textContent=`${hits} / 5`; mtimer(next, 180); };
+    f.appendChild(t);
+    mtimer(()=>{ if(!gone){ gone=true; t.remove(); next(); } }, life);
+  };
+  next();
+}
+// 🛸 RTS: 3초 연타
+function gameApm(area, finish){
+  area.innerHTML = '<div class="apmn" id="apmn">0</div><button class="primary minibtn" id="miniGo">클릭! (스페이스)</button><div class="mini-hint" id="apmt" style="text-align:center;margin-top:8px">3.0초</div>';
+  let taps=0, done=false; const goal=15, t0=performance.now();
+  const tap = () => { if(done) return; taps++; $('#apmn').textContent=taps; };
+  $('#miniGo').onpointerdown = e => { e.preventDefault(); tap(); };
+  miniKey = k => { if(k===' ') tap(); };
+  const tick = () => { if(done) return; const left=Math.max(0,3-(performance.now()-t0)/1000); const el=$('#apmt'); if(el) el.textContent=left.toFixed(1)+'초'; if(left>0) mtimer(tick, 100); };
+  tick();
+  mtimer(()=>{ done=true; finish(taps/goal); }, 3000);
+}
+// 🥊 격투: 방향키 콤보 4개
+function gameCombo(area, finish){
+  const AR=['←','↑','→','↓'], KEYS={ArrowLeft:'←',ArrowUp:'↑',ArrowRight:'→',ArrowDown:'↓'};
+  const seq=[0,1,2,3].map(()=>AR[Math.floor(vrand()*4)]);
+  area.innerHTML = `<div class="combo">${seq.map((a,i)=>`<span id="cb${i}">${a}</span>`).join('')}</div>
+    <div class="arrows">${AR.map(a=>`<button data-a="${a}">${a}</button>`).join('')}</div>`;
+  let i=0, done=false; const t0=performance.now(), limit=3500;
+  const input = a => {
+    if(done) return;
+    if(a===seq[i]){ $('#cb'+i).classList.add('ok'); i++; SFX.play('click');
+      if(i===4){ done=true; const t=(performance.now()-t0)/limit; finish(.75 + .25*(1-t)); } }
+    else { done=true; $('#cb'+i).classList.add('bad'); finish(i/4*.7); }
+  };
+  area.querySelectorAll('.arrows button').forEach(b=>b.onpointerdown=e=>{ e.preventDefault(); input(b.dataset.a); });
+  miniKey = k => { if(KEYS[k]) input(KEYS[k]); };
+  mtimer(()=>{ if(!done){ done=true; finish(i/4*.7); } }, limit);
+}
+// 🪂 배틀로얄: 교전 반응 속도 3번
+function gameReact(area, finish){
+  area.innerHTML = '<div class="react" id="rbox">기다리세요…</div><div class="mini-hint" id="rinfo" style="text-align:center;margin-top:8px">1 / 3</div>';
+  let round=0, scores=[], state='wait', shownAt=0;
+  const box=$('#rbox');
+  const start = () => {
+    if(round>=3){ finish(scores.reduce((a,b)=>a+b,0)/3); return; }
+    round++; state='wait'; box.className='react'; box.textContent='기다리세요…'; $('#rinfo').textContent=`${round} / 3`;
+    mtimer(()=>{ state='go'; shownAt=performance.now(); box.className='react go'; box.textContent='!'; SFX.play('click');
+      mtimer(()=>{ if(state==='go'){ state='done'; scores.push(0); box.textContent='늦었어요!'; mtimer(start, 500); } }, 1200); }, 700 + vrand()*1300);
+  };
+  const press = () => {
+    if(state==='wait'){ state='done'; miniTimers.forEach(clearTimeout); miniTimers=[]; scores.push(0); box.className='react'; box.textContent='너무 빨라요!'; mtimer(start, 600); }
+    else if(state==='go'){ state='done'; const ms=performance.now()-shownAt; scores.push(clamp((900-ms)/600,0,1)); box.className='react'; box.textContent=`${Math.round(ms)}ms`; mtimer(start, 600); }
+  };
+  box.onpointerdown = e => { e.preventDefault(); press(); };
+  miniKey = k => { if(k===' ') press(); };
+  start();
+}
+const MINI = {
+  moba:  ['⚔️ 한타 타이밍', '움직이는 표시가 초록 구간에 왔을 때 눌러서 한타를 여세요! (스페이스·터치)', gameTiming],
+  fps:   ['🎯 에임', '나타나는 과녁 5개를 사라지기 전에 맞히세요!', gameAim],
+  rts:   ['⌨️ APM 연타', '3초 동안 최대한 많이 누르세요! (스페이스·연속 터치)', gameApm],
+  fight: ['🥊 콤보 입력', '위의 방향키 4개를 순서대로 입력하세요! (방향키·화면 버튼, 3.5초)', gameCombo],
+  br:    ['🪂 교전 반응', '화면이 빨갛게 "!"로 바뀌는 순간 누르세요! 너무 빨리 누르면 실패 (3번)', gameReact],
+};
+function playMini(g){ const [t,h,fn]=MINI[g]; return miniRun(t, h, fn); }
+
 async function featured(opp, stage, bo, weight=1, nat=null){
   const g=S.genre, G=GENRES[g], need=Math.ceil(bo/2);
   const base = nat ? winProbR(nat.rating, opp) : winProb(opp);
   const myName = nat ? nat.name : S.team.name;
-  let mod=0, tName='';
+  let mod=0, tName='', perf=null;
   if(S.injury>0){
     tName='부상으로 결장';
   } else {
@@ -961,6 +1112,7 @@ async function featured(opp, stage, bo, weight=1, nat=null){
       <p class="muted">예상 승률 <b style="color:var(--text)">${pct}%</b> · ${bo}판 ${need}선승제 · 상대 전력 ${opp.rating}</p>
       ${g==='br'?'<p class="muted">라운드마다 상대 팀보다 높은 순위를 차지하면 승리</p>':''}<p>감독: "오늘 작전은 네가 정해라."</p>`, choices:G.tactics.map(t=>({label:t.label,desc:t.desc})), kind:'match'});
     mod=G.tactics[i].mod(); tName=G.tactics[i].label;
+    if(miniOn()){ perf = await playMini(g); mod += (perf-.5)*.2; }
   }
   const p=clamp(.5 + (base+mod-.5)*G.variance, .05, .95);
   let w=0,l=0,n=1; const lines=[];
@@ -973,7 +1125,7 @@ async function featured(opp, stage, bo, weight=1, nat=null){
   S.pop = clamp(S.pop + (win ? (1+(pog?2:0))*weight*meta : -weight*.8));
   S.mental = clamp(S.mental + (win?.7:-2));
   await modal({title: win?'🏆 승리!':'💀 패배', html:`
-    <p class="muted" style="text-align:center">${esc(stage)} · 작전: ${tName}</p>
+    <p class="muted" style="text-align:center">${esc(stage)} · 작전: ${tName}${perf!=null?` · 🕹️ 미니게임 ${Math.round(perf*100)}점 (승률 ${perf>=.5?'+':''}${Math.round((perf-.5)*20)}%)`:''}</p>
     <div class="score">${w} : ${l}</div><ul class="pbp">${lines.join('')}</ul>
     ${pog?'<p class="pog">🌟 POG(Player of the Game) 선정!</p>':''}`, choices:[{label:'계속'}], kind: win?'win':'lose'});
   return win;
@@ -2159,6 +2311,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {b:13, d:'2026-11-26', items:['🕹️ 경기 미니게임: 중요한 경기마다 장르별 3초 조작 (한타 타이밍·에임·APM·콤보·반응 속도)','🎯 미니게임 점수가 승률에 최대 ±10% 반영','⏭ 건너뛰기, 위쪽 🕹️ 버튼으로 끄고 켜기']},
   {b:12, d:'2026-11-26', items:['🔗 결과 복사·공유에 게임 링크가 함께 들어가요','🔧 게임 개선을 위한 익명 유입 경로 통계']},
   {b:11, d:'2026-11-24', items:['📆 오늘 랭킹, 🗓️ 이번 주 랭킹 추가 (매주 월요일 새로 시작)','🏆 랭킹 창을 탭으로 한눈에: 오늘 · 이번 주 · 전체 · 오늘의 시드 · 내 기록']},
   {b:10, d:'2026-11-24', items:['🔊 효과음 추가: 승리·패배·우승 팡파르·업적·이벤트·히든 이벤트 등','🔇 오른쪽 위 버튼으로 효과음을 끄고 켤 수 있어요']},
@@ -2455,6 +2608,7 @@ async function chooseGenreBtn(){ if(busy) return; busy=true; await chooseGenre(f
 roll = rollBirth();
 showStart();
 $('#sndBtn').textContent = soundBtnLabel(); $('#sndBtn').title = SFX.on ? '효과음 끄기' : '효과음 켜기';
+if(!miniOn()){ $('#miniBtn').style.opacity=.45; $('#miniBtn').title='경기 미니게임 켜기'; }
 trackVisit();
 setTimeout(maybeShowUpdates, 400);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkNewVersion(); });
