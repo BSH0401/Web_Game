@@ -223,6 +223,8 @@ details.others summary{cursor:pointer;color:var(--muted);font-size:12.5px;paddin
 .react{height:170px;border-radius:12px;display:grid;place-items:center;font-size:30px;font-weight:900;background:#1a2133;border:1px solid var(--line);cursor:pointer}
 .react.go{background:#5a1b25;border-color:var(--bad);color:#fff;font-size:64px}
 .apmn{font-size:56px;font-weight:900;text-align:center;margin:6px 0}
+.lgbtn{width:100%;margin-top:14px;background:linear-gradient(90deg,#3ecf8e,#4f8cff);padding:12px 16px;text-align:left}
+.lgbtn small{display:block;font-weight:500;font-size:12px;opacity:.9}
 .wkcard{background:var(--panel2);border:1px solid #3a3466;border-radius:12px;padding:9px 11px;margin:12px 0;font-size:13px}
 .wkcard .t{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px}
 .wk{display:flex;gap:8px;align-items:baseline;padding:2px 0}
@@ -1576,6 +1578,16 @@ const EVENTS = [
    {label:'조용히 준비한다', run:()=>{ fx({skill:3}); return '말 대신 실력으로 보여주자.'; }}]},
  {id:'fan_letter', cond:()=>S.pop>=20, title:'💌 팬레터', text:'"힘들 때 선수님 경기를 보며 버텼어요." 손편지 한 통이 도착했다.', choices:[
    {label:'답장을 쓴다', run:()=>{ fx({mental:6,pop:2}); return '팬의 SNS에 답장 인증샷이 올라왔다.'; }}]},
+ // ===== 2세대 가문 이벤트 =====
+ {id:'lg_pressure', once:true, cond:()=>!!S.legacy&&S.legacy.parent.score>=4000&&S.age>=15, title:'👑 레전드의 자녀', text:()=>`어딜 가나 "${S.legacy.parent.name}의 아이"라는 꼬리표가 따라다닌다. 기대와 비교가 동시에 쏟아진다.`, choices:[
+   {label:'정면으로 부딪친다', run:()=>{ if(S.mental>=50){ fx({mental:6,pop:6}); hist('"부모보다 잘한다"는 평을 듣다','good'); return '"오히려 부모보다 잘하는데?" 커뮤니티의 평가가 바뀌기 시작했다.'; } fx({mental:-8}); return '비교가 너무 버겁다… 잠이 오지 않는다.'; }},
+   {label:'부모님 이름을 숨기고 활동한다', run:()=>{ fx({pop:-4,mental:5}); return '닉네임 뒤에 숨었다. 오롯이 내 실력으로만 평가받고 싶다.'; }}]},
+ {id:'lg_advice', once:true, cond:()=>!!S.legacy&&!!S.genre&&S.age>=16, title:'📞 부모님의 조언', text:()=>`은퇴 후 ${S.legacy.parent.career}(으)로 지내는 부모님(${S.legacy.parent.name})이 전화를 걸어왔다. "요즘 경기 봤어. 할 얘기가 있다."`, choices:[
+   {label:'귀담아듣는다', run:()=>{ fx({macro:5,skill:2,mental:3}); return '선수 시절의 노하우가 그대로 전해졌다. 보는 눈이 달라졌다.'; }},
+   {label:'"제 방식대로 할게요"', run:()=>{ fx({mental:4,pop:2}); return '수화기 너머로 웃음소리가 들렸다. "그래, 나도 그랬지."'; }}]},
+ {id:'lg_team', once:true, cond:()=>!!S.legacy&&!!S.legacy.parent.team&&!S.team&&!!S.genre&&S.age>=16&&teamsFor(S.genre).some(t=>t.name===S.legacy.parent.team), title:'🏟️ 부모님의 옛 팀', text:()=>`부모님(${S.legacy.parent.name})이 뛰었던 <b>${S.legacy.parent.team}</b>에서 연락이 왔다. "우리 팀의 다음 세대가 되어 줄래?"`, choices:[
+   {label:'부모님의 팀에 입단한다', run:()=>{ const t=teamsFor(S.genre).find(x=>x.name===S.legacy.parent.team); joinTeam(t); fx({pop:6}); return `${t.name} 유니폼을 입었다. 부모님의 등번호가 걸린 연습실이 낯익다.`; }},
+   {label:'내 힘으로 길을 찾는다', run:()=>{ fx({mental:5}); return '"고맙지만, 저만의 길을 가볼게요."'; }}]},
  {id:'bday', cond:()=>S.pop>=35, title:'🎂 생일', text:'팬들이 지하철역에 생일 광고를 걸어줬다!', choices:[
    {label:'감동이다...', run:()=>{ fx({mental:8,pop:2}); return '인증샷을 올렸다. 더 열심히 해야겠다.'; }}]},
 ];
@@ -1626,7 +1638,8 @@ async function hiddenEvent(){
 async function randomEvent(){
   const pool = EVENTS.filter(e=>(!e.once||!S.seen[e.id]) && (S.cool[e.id]||0)<=S.turn && e.cond());
   if(!pool.length) return;
-  const e = pick(pool); S.seen[e.id]=true; S.cool[e.id]=S.turn+10;
+  const lgp = pool.filter(e=>e.id.startsWith('lg_'));   // 가문 이벤트는 조건이 맞으면 자주 나오게
+  const e = lgp.length && chance(.5) ? pick(lgp) : pick(pool); S.seen[e.id]=true; S.cool[e.id]=S.turn+10;
   const text = typeof e.text==='function' ? e.text() : e.text;
   const ch = e.choices.map(c=>({label:c.label, desc:c.desc, disabled: typeof c.disabled==='function' ? c.disabled() : false}));
   if(ch.every(c=>c.disabled)) ch[ch.length-1].disabled=false;
@@ -1704,7 +1717,7 @@ function buildRecapSlides(){
   // 1. 오프닝
   slides.push({ms:3000, html:`<div class="rc-kicker">CAREER RECAP</div>
     <div class="rc-big">${esc(S.name)}</div>
-    <div class="rc-sub">${S.wasPro ? `${S.age}세, 마지막 경기를 마치고 키보드를 내려놓았다.` : `${S.age}세, 프로의 꿈을 좇았던 ${S.age-14}년을 마무리하며.`}</div>`});
+    <div class="rc-sub">${S.legacy?`${S.legacy.gen}대째 게이머 가문 · `:''}${S.wasPro ? `${S.age}세, 마지막 경기를 마치고 키보드를 내려놓았다.` : `${S.age}세, 프로의 꿈을 좇았던 ${S.age-14}년을 마무리하며.`}</div>`});
   // 2. 출발점
   slides.push({ms:3800, html:`<div class="rc-kicker">THE BEGINNING</div>
     <div class="rc-h">14세, ${CT().flag} ${CT().name}의 ${S.family.emoji} ${S.family.name}에서 태어난 게이머</div>
@@ -1835,6 +1848,9 @@ const ACHS = [
   {id:'allcountry', cat:'collect', ic:'🌏', name:'세계 일주', desc:'6개 나라 모두로 1군 데뷔', meta:true, test:c=>Object.keys(c.countries).length>=6},
   {id:'allgenre', cat:'collect', ic:'🎮', name:'올라운더', desc:'5개 장르 모두로 1군 데뷔', meta:true, test:c=>Object.keys(c.genres).length>=5},
   {id:'endings6', cat:'collect', ic:'🎬', name:'다양한 인생', desc:'서로 다른 엔딩 6종 보기', meta:true, test:c=>Object.keys(c.endings).length>=6},
+  {id:'legacy2', cat:'collect', ic:'👨‍👦', name:'대를 잇다', desc:'2세대로 인생을 끝까지 플레이하기', end:true, test:()=>!!S.legacy},
+  {id:'legacy3', cat:'collect', ic:'🌳', name:'명문가', desc:'3대 이상 이어가기', end:true, test:()=>!!S.legacy&&S.legacy.gen>=3},
+  {id:'surpass', cat:'challenge', ic:'🌱', name:'청출어람', desc:'부모보다 높은 인생 점수로 은퇴하기', end:true, test:()=>!!S.legacy&&computeScore()>S.legacy.parent.score},
   {id:'weeklyAll', cat:'collect', ic:'📋', name:'주간 올클리어', desc:'한 주의 도전과제 3개를 모두 깨기', meta:true, test:c=>Object.keys(c.weekly||{}).length>=1},
   {id:'hiddenEv', cat:'collect', ic:'✨', name:'숨겨진 이야기', desc:'히든 이벤트 보기', meta:true, test:c=>HIDDEN.some(e=>c.events[e.id])},
   {id:'hiddenEnd', cat:'collect', ic:'🗝️', name:'비밀의 문', desc:'히든 엔딩 보기', meta:true, test:c=>HIDDEN_ENDINGS.some(e=>c.endings[e])},
@@ -2079,6 +2095,9 @@ function showEnding(){
     </div>
     <h3 style="margin:10px 0 4px">🏆 우승 기록</h3>${trophies}
     ${rivalEndHtml()}
+    ${S.legacy ? `<h3 style="margin:14px 0 6px">🌳 가문 연표 · ${S.legacy.gen}대째 게이머 가문</h3>
+      <div class="tl">${[...S.legacy.lineage, {gen:S.legacy.gen, name:S.name, title, career:sub, score}].map(x=>`<div class="key"><b>${x.gen}대 ${esc(x.name)}</b> · ${esc(x.title)} · 은퇴 후 ${esc(x.career)} · ${Number(x.score).toLocaleString()}점</div>`).join('')}</div>
+      <div class="muted" style="font-size:13px">가문 총점 <b style="color:var(--gold)">${(S.legacy.lineage.reduce((a,x)=>a+Number(x.score),0)+score).toLocaleString()}점</b>${score>S.legacy.parent.score?' · 🌱 부모를 넘어섰다!':''}</div>` : ''}
     <h3 style="margin:14px 0 6px">📋 주간 도전과제</h3>
     ${weeklyGot.length?`<div class="pog" style="text-align:left;margin-bottom:6px">🎉 이번 인생에서 ${weeklyGot.length}개 달성! 🎟️ 다음 인생 특수훈련 +${weeklyGot.length}</div>`:''}${weeklyCard()}
     <h3 style="margin:14px 0 6px">🏅 이번 인생에서 얻은 업적 (${newAch.length})</h3>
@@ -2087,6 +2106,7 @@ function showEnding(){
     <h3 style="margin:14px 0 0">📅 인생 연표</h3><div class="tl">${tl}</div>
     <div class="scoreline"><span class="muted">인생 점수</span><span class="num" id="scoreNum">0</span><span class="muted">점</span>
       ${isBest?'<span class="pill hot">🎉 최고 기록!</span>':`<span class="muted">(최고 ${best.score.toLocaleString()}점 · ${esc(best.title)})</span>`}</div>
+    ${S.daily ? '' : `<button class="primary lgbtn" onclick="startLegacy()">👨‍👦 ${(S.legacy?S.legacy.gen:1)+1}대로 이어가기<small>내 재능·재산·장르 감각을 물려받은 아이로 다음 인생 시작</small></button>`}
     <div class="btnrow"><button class="primary" onclick="restart()">🔁 다시 태어나기</button>
       ${rankOn()?`<button class="ghost" id="rankBtn" onclick="submitRank()">${S.daily?'📅 오늘의 랭킹 등록':'🌐 랭킹 등록'}</button>`:''}
       <button class="ghost" onclick="showRanking(${S.daily?"'daily'":''})">🏆 랭킹 보기</button>
@@ -2207,6 +2227,52 @@ function copyResult(){
   if(navigator.clipboard) navigator.clipboard.writeText(S.shareText).then(done,()=>prompt('복사하세요',S.shareText));
   else prompt('복사하세요',S.shareText);
 }
+/* ================= 2세대 레거시 ================= */
+// 은퇴한 부모의 기록을 바탕으로 자녀의 출생 조건을 만든다 (자유 플레이만)
+function parentSummary(){
+  const [sub] = careerText();
+  const me = {gen:(S.legacy?S.legacy.gen:1), name:S.name, title:computeTitle(), career:sub, score:computeScore(), country:S.country};
+  return {
+    ...me, money:S.money, wasPro:!!S.wasPro, worlds:S.trophies.worlds.length, leagues:S.trophies.league.length,
+    talent:{...S.talent}, genres:[...S.careerGenres], team:(S.history.map(h=>{ const m=h.text.match(/→ (.+?) (?:해외 |중국 )?이적$/)||h.text.match(/^(.+?) [12]군 입단$/); return m&&m[1]; }).filter(Boolean).pop()||null),
+    rival: S.flags.rivalMet && S.rv ? S.rv.name : null,
+    lineage:[...(S.legacy?S.legacy.lineage:[]), me],
+  };
+}
+function legacyRoll(P){
+  const r = rollBirth();
+  r.family = P.money>=20000 ? FAMILIES[0] : P.money>=3000 ? FAMILIES[1] : FAMILIES[2];
+  r.base.mental = r.dist.mental + r.family.mental;
+  const bonus = (P.wasPro ? .03 : 0) + Math.min(.06, P.worlds*.02);
+  for(const k of ['phys','macro','mental']) r.talent[k] = clamp((r.talent[k] + P.talent[k])/2 + bonus, .8, 1.35);
+  for(const g of P.genres) r.apt[g] = Math.min(1.3, r.apt[g] + .08);
+  return r;
+}
+async function startLegacy(){
+  if(!S || !S.ended || S.daily) return;
+  const P = parentSummary(), r = legacyRoll(P), gen = P.gen + 1;
+  const g = k => `<span class="gb grade-${grade(r.talent[k])}">${grade(r.talent[k])}</span>`;
+  const base = P.name.replace(/ \d+세$/,''), defName0 = base.slice(0,8) + ` ${gen}세`, defName = defName0===P.name ? base.slice(0,8)+' 주니어' : defName0;
+  const i = await modal({title:`👨‍👦 ${gen}대 프로게이머의 탄생`, html:`
+    <p style="margin-top:0"><b>${esc(P.name)}</b>(${esc(P.title)} · 은퇴 후 ${esc(P.career)})의 아이가 14살이 되었다.</p>
+    <div class="gacha" style="margin:10px 0">
+      <div class="gcell fam fam-${FAMILIES.indexOf(r.family)}" style="grid-column:1/-1"><span class="fe">${r.family.emoji}</span>
+        <div><div class="l">가정 환경 (부모의 재산 ${won(P.money)})</div><div class="v">${r.family.name}</div></div></div>
+      <div class="gcell"><div class="l">🖐️ 피지컬</div><div class="v">${g('phys')}<small class="muted gi">시작 ${r.dist.phys}</small></div></div>
+      <div class="gcell"><div class="l">🧠 운영</div><div class="v">${g('macro')}<small class="muted gi">시작 ${r.dist.macro}</small></div></div>
+      <div class="gcell"><div class="l">💎 멘탈</div><div class="v">${g('mental')}<small class="muted gi">시작 ${r.dist.mental}</small></div></div>
+      <div class="gcell"><div class="l">🧬 물려받은 장르 감각</div><div class="v" style="font-size:14px">${P.genres.length?P.genres.map(x=>GENRES[x].icon+' '+GENRES[x].name).join(' · '):'없음'}</div></div>
+    </div>
+    <p class="muted" style="font-size:12.5px">성장 재능은 부모를 닮았어요${P.wasPro?' (프로 출신 부모 덕분에 조금 더 높아요)':''}. ${COUNTRIES[P.country].flag} 국적은 부모와 같아요.${P.rival?` 그리고… 라이벌 <b>${esc(P.rival)}</b> 선수의 아이도 게임을 시작했다는 소문이 있다.`:''}</p>
+    <label class="muted" style="font-size:13px">아이의 닉네임</label>
+    <input type="text" id="lgName" maxlength="12" value="${esc(defName)}">`,
+    choices:[{label:`👶 ${gen}대로 인생 시작`}, {label:'취소'}]});
+  if(i!==0) return;
+  const name = ($('#lgName').value.trim() || defName).slice(0,12);
+  playMode='free'; storeSet('pg_mode','free');
+  startGame({P, roll:r, name, gen});
+}
+
 function restart(){ S=null; rerolls=3; roll=rollBirth(); $('#ending').classList.add('hide'); showStart(); setTimeout(checkNewVersion, 600); }
 
 /* ================= 랭킹 ================= */
@@ -2394,6 +2460,7 @@ async function showTutorial(){
   busy=wasBusy; if(S && !S.ended) render();
 }
 const CHANGELOG = [
+  {b:15, d:'2026-11-26', items:['👨‍👦 2세대 레거시: 은퇴 후 내 아이로 다음 인생을 이어가요 (재능·재산·장르 감각 상속)','🔥 라이벌도 2세로 돌아온다, 가문 전용 이벤트 3종','🌳 가문 연표와 가문 총점, 업적 3종 추가']},
   {b:14, d:'2026-11-26', items:['📋 주간 도전과제: 매주 월요일 새 과제 3개 (쉬움·보통·어려움)','🎟️ 과제를 깨면 다음 인생 특수훈련 +1 티켓','🏅 업적 「주간 올클리어」 추가']},
   {b:13, d:'2026-11-26', items:['🕹️ 경기 미니게임: 중요한 경기마다 장르별 3초 조작 (한타 타이밍·에임·APM·콤보·반응 속도)','🎯 미니게임 점수가 승률에 최대 ±10% 반영','⏭ 건너뛰기, 위쪽 🕹️ 버튼으로 끄고 켜기']},
   {b:12, d:'2026-11-26', items:['🔗 결과 복사·공유에 게임 링크가 함께 들어가요','🔧 게임 개선을 위한 익명 유입 경로 통계']},
@@ -2547,9 +2614,17 @@ function showStart(){
 }
 function setCountry(k){ selCountry=k; storeSet('pg_country',k); const n=$('#nick')?$('#nick').value:''; showStart(); $('#nick').value=n; }
 function reroll(){ if(rerolls<=0) return; rerolls--; SFX.play('roll'); roll=rollBirth(); const n=$('#nick').value; showStart(); $('#nick').value=n; $('#gacha').classList.add('flip'); }
-function startGame(){
-  const name = ($('#nick').value.trim() || pick(['새싹','손가락천재','키보드워리어','에임봇','갓겜러'])).slice(0,12);
-  if(playMode==='daily'){
+function startGame(lg=null){
+  const name = lg ? lg.name : ($('#nick').value.trim() || pick(['새싹','손가락천재','키보드워리어','에임봇','갓겜러'])).slice(0,12);
+  if(lg){
+    S = newLife(lg.roll, name); S.country = lg.P.country;
+    S.legacy = {gen:lg.gen, parent:{name:lg.P.name, title:lg.P.title, career:lg.P.career, score:lg.P.score, team:lg.P.team}, lineage:lg.P.lineage};
+    if(lg.P.rival) S.rival = `${lg.P.rival.replace(/ \d+세$/,'').slice(0,8)} ${lg.gen}세`;
+    S.pop = clamp(S.pop + 4 + lg.P.worlds*4 + Math.min(lg.P.leagues,5));   // 유명한 부모 덕분에 조금 알려진 채 시작
+    const bonus = storeGet('pg_bonus')||0;
+    if(bonus>0){ S.special += 1; S.specialMax = SPECIAL_MAX + 1; storeSet('pg_bonus', bonus-1); setTimeout(()=>showToast('🎟️ 보너스 티켓 사용! 이번 인생 특수훈련 +1 (6회)'), 600); }
+    $('#ending').classList.add('hide');
+  } else if(playMode==='daily'){
     const P=dailyPack();
     _rngState=P.state; S=newLife(P.roll, name); S.country=P.country; S.daily=P.date;
     S.rngState=_rngState; _rngState=null;   // 이제부터 이 인생의 모든 운은 오늘의 시드를 따른다
@@ -2560,7 +2635,7 @@ function startGame(){
     if(bonus>0){ S.special += 1; S.specialMax = SPECIAL_MAX + 1; storeSet('pg_bonus', bonus-1); setTimeout(()=>showToast('🎟️ 보너스 티켓 사용! 이번 인생 특수훈련 +1 (6회)'), 600); }
   }
   attachMeta();
-  hist(`${CT().flag} ${CT().name} ${S.family.name}에서 태어난 게이머 ${name}, 꿈을 꾸기 시작하다`,'key');
+  hist(S.legacy ? `게이머 가문 ${S.legacy.gen}대 ${name}, 부모 ${S.legacy.parent.name}의 뒤를 잇다` : `${CT().flag} ${CT().name} ${S.family.name}에서 태어난 게이머 ${name}, 꿈을 꾸기 시작하다`,'key');
   log(`${S.daily?`📅 오늘의 시드(${S.daily}) · `:''}🍼 ${S.family.emoji} ${S.family.name} 출신 ${esc(name)}의 게이머 인생이 시작됐다!`,'','key');
   $('#start').classList.add('hide'); $('#game').classList.remove('hide');
   lastLogShown=null; render(); save(); window.scrollTo(0,0);
@@ -2641,6 +2716,7 @@ function render(){
       <span class="mini">💰 <b>${won(S.money)}</b></span>
       <span class="mini ${S.fatigue>70?'warn':''}">😵 피로 <b>${Math.round(S.fatigue)}</b></span>
       <span class="mini">⭐ 특훈 <b>${S.special}</b></span>
+      ${S.legacy?`<span class="mini">👨‍👦 ${S.legacy.gen}대</span>`:''}
       ${S.daily?`<span class="mini hotm">📅 오늘의 시드</span>`:''}
       ${S.injury>0?`<span class="mini bad">🩹 부상 ${S.injury}</span>`:''}
       ${S.slump>0?`<span class="mini warn">🌧️ 슬럼프 ${S.slump}</span>`:''}
